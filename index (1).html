@@ -1,0 +1,5208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlPage">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">مستشارك الذكي للأدوية | Smart Medicine Advisor</title>
+<style>
+    /* --- التنسيق (CSS) --- */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #000000;
+        color: #ffffff;
+        text-align: center;
+        padding: 0;
+        margin: 0;
+    }
+
+    header {
+        background: #0a0a0a;
+        color: white;
+        padding: 40px 20px;
+        border-bottom: 2px solid #007bff;
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.4);
+    }
+
+    h1 { margin: 0; text-shadow: 0 0 10px #007bff; }
+    
+    .lang-container { margin-top: 20px; }
+    select {
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 2px solid #007bff;
+        background: #000;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #medical-tip-box {
+        background: linear-gradient(135deg, #001f3f, #003366);
+        border: 1px solid #007bff;
+        padding: 20px;
+        margin: 30px auto;
+        width: 85%;
+        max-width: 700px;
+        border-radius: 20px;
+        color: #e6f2ff;
+        font-size: 1.2em;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 0 15px rgba(0, 123, 255, 0.3);
+        transition: transform 0.2s;
+    }
+
+    input {
+        padding: 15px;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 30px;
+        border: 1px solid #007bff;
+        background: #111;
+        color: white;
+        font-size: 18px;
+        margin-top: 20px;
+        outline: none;
+    }
+
+    button {
+        padding: 12px 30px;
+        margin: 20px;
+        cursor: pointer;
+        border-radius: 30px;
+        border: none;
+        font-weight: bold;
+        background: linear-gradient(90deg, #007bff, #00c3ff);
+        color: white;
+        transition: 0.3s;
+    }
+
+    #results {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 20px;
+    }
+
+    .card {
+        padding: 25px;
+        margin-bottom: 25px;
+        border-radius: 20px;
+        background: #111;
+        border: 1px solid #333;
+        width: 100%;
+        max-width: 650px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        text-align: right;
+    }
+    [dir="ltr"] .card { text-align: left; }
+
+    .use-text { color: #28a745; margin: 10px 0; font-weight: bold; }
+    .warning-text { color: #dc3545; margin: 10px 0; font-weight: bold; }
+    .schedule-text { 
+        margin-top: 15px; 
+        padding: 12px; 
+        background: rgba(0, 123, 255, 0.15); 
+        border-radius: 12px; 
+        color: #00c3ff; 
+        font-weight: bold;
+        border: 1px dashed #007bff;
+    }
+
+    footer { padding: 40px; font-size: 0.9em; color: #666; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1 id="mainHeading">🩺 مستشارك الذكي للأدوية</h1>
+<h1>صمم بواسطه Mohamed Elsayed </h1>
+    <p>Smart Medicine Advisor</p>
+    <div class="lang-container">
+        <select id="languageSelect" onchange="changeLanguage()">
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+</header>
+
+<main>
+    <div id="medical-tip-box" onclick="displayRandomTip()">
+        <span id="tipText">💡 انقر للحصول على نصيحة طبية...</span>
+    </div>
+    
+    <input type="text" id="searchInput" placeholder="اكتب اسم الدواء أو العرض..." onkeyup="searchMedicine()">
+    <br>
+    <button id="clearBtn" onclick="clearResults()">🗑️ مسح النتائج</button>
+    <div id="results"></div>
+</main>
+
+<footer>
+    <p id="disclaimer">⚠️ تنبيه: هذه المعلومات للأغراض التعليمية فقط ولا تغني عن استشارة الطبيب.</p>
+</footer>
+
+<script>
+    // ==========================================
+    // 1. مكان وضع الأدوية يدوياً
+    // ==========================================
+    
+const medicines = [
+  {
+    name_ar: "باراسيتامول",
+    name_en: "Paracetamol",
+    use_ar: "مسكن وخافض للحرارة",
+    use_en: "Pain reliever and fever reducer",
+    warning_ar: "لا تتجاوز الجرعة اليومية",
+    warning_en: "Do not exceed the daily dose",
+    schedule_ar: "عند اللزوم (بحد أقصى 4 جرعات يومياً)",
+    schedule_en: "When needed (Max 4 doses daily)"
+  },
+  {
+    name_ar: "ايبوبروفين",
+    name_en: "Ibuprofen",
+    use_ar: "مسكن ومضاد للالتهاب",
+    use_en: "Pain reliever and anti-inflammatory",
+    warning_ar: "قد يسبب اضطراب المعدة",
+    warning_en: "May cause stomach upset",
+    schedule_ar: "كل 8 ساعات بعد الأكل (لتجنب ألم المعدة)",
+    schedule_en: "Every 8 hours after food (To avoid stomach pain)"
+  },
+  {
+    name_ar: "أموكسيسيلين",
+    name_en: "Amoxicillin",
+    use_ar: "مضاد حيوي للعدوى البكتيرية",
+    use_en: "Antibiotic for bacterial infections",
+    warning_ar: "استشر الطبيب قبل الاستخدام",
+    warning_en: "Consult doctor before use",
+    schedule_ar: "كل 8 أو 12 ساعة بانتظام (يجب الالتزام بالوقت)",
+    schedule_en: "Every 8 or 12 hours regularly (Strict timing)"
+  },
+  {
+    name_ar: "أزيثرومايسين",
+    name_en: "Azithromycin",
+    use_ar: "مضاد حيوي للعدوى",
+    use_en: "Antibiotic for infections",
+    warning_ar: "قد يسبب اضطرابات هضمية",
+    warning_en: "May cause digestive upset",
+    schedule_ar: "مرة واحدة يومياً (قبل الأكل بساعة أو بعده بساعتين)",
+    schedule_en: "Once daily (1 hour before or 2 hours after meals)"
+  },
+  {
+    name_ar: "أسيكلوفير",
+    name_en: "Acyclovir",
+    use_ar: "مضاد فيروسات لعلاج الهربس",
+    use_en: "Antiviral for herpes infections",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "5 مرات يومياً كل 4 ساعات (مع استثناء وقت النوم)",
+    schedule_en: "5 times daily every 4 hours (omitting nighttime)"
+  },
+  {
+    name_ar: "امينوفيلين",
+    name_en: "Aminophylline",
+    use_ar: "يفتح الشعب الهوائية",
+    use_en: "Bronchodilator for asthma",
+    warning_ar: "استشر الطبيب إذا كنت حامل",
+    warning_en: "Consult doctor if pregnant",
+    schedule_ar: "حسب تعليمات الطبيب بدقة (تجنب القهوة والشاي)",
+    schedule_en: "Strictly as prescribed (Avoid caffeine)"
+  },
+  {
+    name_ar: "أوميبرازول",
+    name_en: "Omeprazole",
+    use_ar: "يخفف حموضة المعدة",
+    use_en: "Reduces stomach acidity",
+    warning_ar: "لا يستخدم لفترة طويلة",
+    warning_en: "Do not use long-term",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "رانيتيدين",
+    name_en: "Ranitidine",
+    use_ar: "يخفف الحموضة",
+    use_en: "Reduces stomach acid",
+    warning_ar: "قد يسبب دوار",
+    warning_en: "May cause dizziness",
+    schedule_ar: "مرتين يومياً (صباحاً ومساءً) قبل الأكل",
+    schedule_en: "Twice daily (morning and evening) before meals"
+  },
+  {
+    name_ar: "سيميتيدين",
+    name_en: "Cimetidine",
+    use_ar: "يخفف حرقة المعدة",
+    use_en: "Treats heartburn",
+    warning_ar: "استشر الطبيب في حالات خاصة",
+    warning_en: "Consult doctor in special conditions",
+    schedule_ar: "مع الطعام أو قبل النوم",
+    schedule_en: "With meals or at bedtime"
+  },
+  {
+    name_ar: "لورازيبام",
+    name_en: "Lorazepam",
+    use_ar: "مضاد للقلق",
+    use_en: "Anti-anxiety medication",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "قبل النوم أو حسب الحاجة (يسبب النعاس)",
+    schedule_en: "Before bedtime or as needed (Causes drowsiness)"
+  },
+  {
+    name_ar: "ديازيبام",
+    name_en: "Diazepam",
+    use_ar: "يهدئ التوتر والقلق",
+    use_en: "Relieves anxiety and tension",
+    warning_ar: "يستعمل بحذر",
+    warning_en: "Use with caution",
+    schedule_ar: "حسب تعليمات الطبيب بدقة (غالباً مساءً)",
+    schedule_en: "Strictly as prescribed (Usually evening)"
+  },
+  {
+    name_ar: "ألبرازولام",
+    name_en: "Alprazolam",
+    use_ar: "مضاد للقلق",
+    use_en: "Anti-anxiety medication",
+    warning_ar: "لا توقف الدواء فجأة",
+    warning_en: "Do not stop the medication suddenly",
+    schedule_ar: "حسب تعليمات الطبيب بدقة",
+    schedule_en: "Strictly as prescribed by the doctor"
+  },
+  {
+    name_ar: "ميتفورمين",
+    name_en: "Metformin",
+    use_ar: "يخفض مستوى السكر في الدم",
+    use_en: "Lowers blood glucose in diabetes",
+    warning_ar: "استشر الطبيب عند مشاكل كبدية",
+    warning_en: "Consult doctor for liver issues",
+    schedule_ar: "مع أو بعد وجبة الطعام مباشرة",
+    schedule_en: "With or immediately after meals"
+  },
+  {
+    name_ar: "لانسوبرازول",
+    name_en: "Lansoprazole",
+    use_ar: "يخفف حموضة المعدة وقرحها",
+    use_en: "Treats stomach acidity and ulcers",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "سيتريزين",
+    name_en: "Cetirizine",
+    use_ar: "مضاد للحساسية",
+    use_en: "Allergy medication",
+    warning_ar: "قد يسبب نعاس خفيف",
+    warning_en: "May cause mild drowsiness",
+    schedule_ar: "مرة واحدة يومياً (يفضل مساءً)",
+    schedule_en: "Once daily (Preferably evening)"
+  },
+  {
+    name_ar: "لوراتبين",
+    name_en: "Loratadine",
+    use_ar: "مضاد للحساسية",
+    use_en: "Antihistamine",
+    warning_ar: "نادراً يسبب صداع",
+    warning_en: "May rarely cause headache",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "سالميتيرول",
+    name_en: "Salmeterol",
+    use_ar: "يفتح الشعب الهوائية",
+    use_en: "Bronchodilator for asthma/COPD",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرتين يومياً (كل 12 ساعة)",
+    schedule_en: "Twice daily (Every 12 hours)"
+  },
+  {
+    name_ar: "فلوتيكازون",
+    name_en: "Fluticasone",
+    use_ar: "مضاد التهاب للشعب الهوائية",
+    use_en: "Anti-inflammatory for airways",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة أو مرتين يومياً حسب الحالة",
+    schedule_en: "Once or twice daily depending on condition"
+  },
+  {
+    name_ar: "مونتيلوكاست",
+    name_en: "Montelukast",
+    use_ar: "يخفض أعراض الربو والحساسية",
+    use_en: "Reduces asthma and allergy symptoms",
+    warning_ar: "قد يسبب صداع",
+    warning_en: "May cause headache",
+    schedule_ar: "مرة واحدة يومياً في المساء",
+    schedule_en: "Once daily in the evening"
+  },
+  {
+    name_ar: "ديكلوفيناك",
+    name_en: "Diclofenac",
+    use_ar: "مسكن ومضاد التهاب",
+    use_en: "Pain reliever and anti-inflammatory",
+    warning_ar: "قد يسبب اضطراب المعدة",
+    warning_en: "May cause stomach upset",
+    schedule_ar: "بعد الأكل مباشرة (لتجنب القرحة)",
+    schedule_en: "Immediately after meals (To avoid ulcers)"
+  },
+  {
+    name_ar: "كيتوبروفين",
+    name_en: "Ketoprofen",
+    use_ar: "مسكن ومضاد التهاب",
+    use_en: "Pain reliever and anti-inflammatory",
+    warning_ar: "لا تستخدم لفترة طويلة",
+    warning_en: "Do not use long-term",
+    schedule_ar: "بعد الأكل مباشرة",
+    schedule_en: "Immediately after meals"
+  },
+  {
+    name_ar: "سيمفاستاتين",
+    name_en: "Simvastatin",
+    use_ar: "يخفض الكوليسترول",
+    use_en: "Lowers cholesterol",
+    warning_ar: "تجنب الكحول",
+    warning_en: "Avoid alcohol",
+    schedule_ar: "مرة واحدة يومياً في المساء",
+    schedule_en: "Once daily in the evening"
+  },
+  {
+    name_ar: "أتورفاستاتين",
+    name_en: "Atorvastatin",
+    use_ar: "يخفض الكوليسترول الضار",
+    use_en: "Reduces LDL cholesterol",
+    warning_ar: "راقب وظائف الكبد",
+    warning_en: "Monitor liver function",
+    schedule_ar: "مرة واحدة يومياً في المساء",
+    schedule_en: "Once daily in the evening"
+  },
+  {
+    name_ar: "كلوبيدوغريل",
+    name_en: "Clopidogrel",
+    use_ar: "يمنع تجلط الدم",
+    use_en: "Prevents blood clots",
+    warning_ar: "راقب النزيف",
+    warning_en: "Monitor for bleeding",
+    schedule_ar: "مرة واحدة يومياً في نفس الموعد",
+    schedule_en: "Once daily at the same time"
+  },
+  {
+    name_ar: "وارفارين",
+    name_en: "Warfarin",
+    use_ar: "مضاد للتجلط",
+    use_en: "Blood thinner",
+    warning_ar: "راقب التفاعلات مع الأدوية الأخرى",
+    warning_en: "Monitor interactions with other drugs",
+    schedule_ar: "مرة واحدة يومياً في نفس الموعد بدقة (غالباً مساءً)",
+    schedule_en: "Once daily at the exact same time (Usually evening)"
+  },
+  {
+    name_ar: "أسبيرين",
+    name_en: "Aspirin",
+    use_ar: "مسكن وخافض حرارة",
+    use_en: "Pain reliever and fever reducer",
+    warning_ar: "لا يستخدم للأطفال دون استشارة الطبيب",
+    warning_en: "Do not use in children without doctor advice",
+    schedule_ar: "بعد الأكل (لحماية المعدة)",
+    schedule_en: "After meals (To protect stomach)"
+  },
+  {
+    name_ar: "تامسولوسين",
+    name_en: "Tamsulosin",
+    use_ar: "يسهل تدفق البول في تضخم البروستاتا",
+    use_en: "Improves urine flow in BPH",
+    warning_ar: "قد يسبب دوار",
+    warning_en: "May cause dizziness",
+    schedule_ar: "مرة يومياً بعد نفس الوجبة بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins after the same meal"
+  },
+  {
+    name_ar: "أميترابتايلين",
+    name_en: "Amitriptyline",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "مرة واحدة يومياً قبل النوم",
+    schedule_en: "Once daily before bedtime"
+  },
+  {
+    name_ar: "سيرترالين",
+    name_en: "Sertraline",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "قد يسبب غثيان",
+    warning_en: "May cause nausea",
+    schedule_ar: "مرة واحدة يومياً (صباحاً أو مساءً)",
+    schedule_en: "Once daily (Morning or evening)"
+  },
+  {
+    name_ar: "دولوكسيتين",
+    name_en: "Duloxetine",
+    use_ar: "مضاد للاكتئاب ومسكن للألم العصبي",
+    use_en: "Antidepressant and neuropathic pain reliever",
+    warning_ar: "قد يسبب دوار",
+    warning_en: "May cause dizziness",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "بروبيرانولول",
+    name_en: "Propranolol",
+    use_ar: "يضبط ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "لا تتوقف فجأة",
+    warning_en: "Do not stop suddenly",
+    schedule_ar: "حسب وصفة الطبيب (غالباً 2-3 مرات يومياً)",
+    schedule_en: "As prescribed (Usually 2-3 times daily)"
+  },
+  {
+    name_ar: "أتنولول",
+    name_en: "Atenolol",
+    use_ar: "يخفض ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "استشر الطبيب قبل الاستخدام",
+    warning_en: "Consult doctor before use",
+    schedule_ar: "مرة واحدة يومياً صباحاً",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "ميتوبرولول",
+    name_en: "Metoprolol",
+    use_ar: "يخفض ضغط الدم ومعدل ضربات القلب",
+    use_en: "Lowers blood pressure and heart rate",
+    warning_ar: "لا تتوقف فجأة",
+    warning_en: "Do not stop suddenly",
+    schedule_ar: "مع الطعام أو بعده مباشرة",
+    schedule_en: "With or immediately after meals"
+  },
+  {
+    name_ar: "لوزارتان",
+    name_en: "Losartan",
+    use_ar: "يخفض ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "استشر الطبيب إذا كنت حامل",
+    warning_en: "Consult doctor if pregnant",
+    schedule_ar: "مرة واحدة يومياً في نفس الموعد",
+    schedule_en: "Once daily at the same time"
+  },
+  {
+    name_ar: "فالاسارتان",
+    name_en: "Valsartan",
+    use_ar: "يخفض ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "راقب ضغط الدم بانتظام",
+    warning_en: "Monitor blood pressure regularly",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "أميلوديبين",
+    name_en: "Amlodipine",
+    use_ar: "يخفض ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "قد يسبب تورم الكاحلين",
+    warning_en: "May cause ankle swelling",
+    schedule_ar: "مرة واحدة يومياً في نفس الموعد",
+    schedule_en: "Once daily at the same time"
+  },
+  {
+    name_ar: "هيدرالازين",
+    name_en: "Hydralazine",
+    use_ar: "يخفض ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "2-4 مرات يومياً حسب وصفة الطبيب",
+    schedule_en: "2-4 times daily as prescribed"
+  },
+  {
+    name_ar: "رينيتيدين",
+    name_en: "Ranitidine",
+    use_ar: "يخفف حرقة المعدة",
+    use_en: "Reduces heartburn",
+    warning_ar: "قد يسبب دوار",
+    warning_en: "May cause dizziness",
+    schedule_ar: "مرتين يومياً قبل الأكل",
+    schedule_en: "Twice daily before meals"
+  },
+  {
+    name_ar: "إيسوميبرازول",
+    name_en: "Esomeprazole",
+    use_ar: "يخفف حموضة المعدة",
+    use_en: "Reduces stomach acidity",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة (أو ساعة)",
+    schedule_en: "Once daily, 30-60 mins before breakfast"
+  },
+  {
+    name_ar: "سودوإيفيدرين",
+    name_en: "Pseudoephedrine",
+    use_ar: "يخفف احتقان الأنف",
+    use_en: "Relieves nasal congestion",
+    warning_ar: "قد يرفع ضغط الدم",
+    warning_en: "May raise blood pressure",
+    schedule_ar: "كل 4-6 ساعات (تجنب قبل النوم لتفادي الأرق)",
+    schedule_en: "Every 4-6 hours (Avoid before bed to prevent insomnia)"
+  },
+  {
+    name_ar: "فينازيبام",
+    name_en: "Phenazepam",
+    use_ar: "مهدئ وقلق",
+    use_en: "Sedative and anxiety",
+    warning_ar: "قد يسبب نعاس شديد",
+    warning_en: "May cause strong drowsiness",
+    schedule_ar: "حسب تعليمات الطبيب (خطر التعود)",
+    schedule_en: "As prescribed (Risk of dependence)"
+  },
+  {
+    name_ar: "ديفينهيدرامين",
+    name_en: "Diphenhydramine",
+    use_ar: "مضاد للحساسية والنوم",
+    use_en: "Antihistamine and sleep aid",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "قبل النوم عند استخدامه للأرق",
+    schedule_en: "Before bedtime when used for sleep"
+  },
+  {
+    name_ar: "ميتازولام",
+    name_en: "Metazolam",
+    use_ar: "مضاد للقلق",
+    use_en: "Anti-anxiety medication",
+    warning_ar: "استعمل بحذر",
+    warning_en: "Use with caution",
+    schedule_ar: "حسب تعليمات الطبيب",
+    schedule_en: "As prescribed by the doctor"
+  },
+  {
+    name_ar: "كيتورولاك",
+    name_en: "Ketorolac",
+    use_ar: "مسكن للألم",
+    use_en: "Pain reliever",
+    warning_ar: "استعمل لفترة قصيرة فقط",
+    warning_en: "Use only for short-term",
+    schedule_ar: "كل 4-6 ساعات عند الحاجة (أقصى مدة 5 أيام)",
+    schedule_en: "Every 4-6 hours PRN (Max 5 days)"
+  },
+  {
+    name_ar: "ترامادول",
+    name_en: "Tramadol",
+    use_ar: "مسكن للألم المعتدل والشديد",
+    use_en: "Moderate to severe pain reliever",
+    warning_ar: "قد يسبب دوار أو غثيان",
+    warning_en: "May cause dizziness or nausea",
+    schedule_ar: "حسب وصفة الطبيب بدقة (خطر الإدمان)",
+    schedule_en: "Strictly as prescribed (Risk of addiction)"
+  },
+  {
+    name_ar: "أوكسيكودون",
+    name_en: "Oxycodone",
+    use_ar: "مسكن للألم الشديد",
+    use_en: "Strong pain reliever",
+    warning_ar: "قد يسبب إدمان",
+    warning_en: "May cause dependence",
+    schedule_ar: "حسب وصفة الطبيب بدقة (خطر الإدمان)",
+    schedule_en: "Strictly as prescribed (Risk of addiction)"
+  },
+  {
+    name_ar: "أفيناسترين",
+    name_en: "Avinastine",
+    use_ar: "مضاد للحساسية",
+    use_en: "Allergy medication",
+    warning_ar: "قد يسبب صداع",
+    warning_en: "May cause headache",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "فلوكستين",
+    name_en: "Fluoxetine",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "قد يسبب أرق",
+    warning_en: "May cause insomnia",
+    schedule_ar: "مرة واحدة يومياً في الصباح",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "باروكستين",
+    name_en: "Paroxetine",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "مرة واحدة يومياً في الصباح (أو المساء إذا سبب نعاساً)",
+    schedule_en: "Once daily morning (or evening if drowsy)"
+  },
+  {
+    name_ar: "سيتالوبرام",
+    name_en: "Citalopram",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "راقب نبض القلب",
+    warning_en: "Monitor heart rate",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "دوكسيلامين",
+    name_en: "Doxylamine",
+    use_ar: "مضاد للحساسية والنوم",
+    use_en: "Antihistamine and sleep aid",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "قبل النوم بـ 30 دقيقة",
+    schedule_en: "30 minutes before bedtime"
+  },
+  {
+    name_ar: "ميكلوزين",
+    name_en: "Meclozine",
+    use_ar: "مضاد للدوار والغثيان",
+    use_en: "Anti-dizziness and nausea",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "عند اللزوم أو قبل السفر بساعة لدوار الحركة",
+    schedule_en: "As needed or 1 hour before travel for motion sickness"
+  },
+  {
+    name_ar: "أوكرابرازول",
+    name_en: "Ucraprazole",
+    use_ar: "يخفف حموضة المعدة",
+    use_en: "Reduces stomach acidity",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "ميتفورمين XR",
+    name_en: "Metformin XR",
+    use_ar: "تحكم في سكر الدم طويل الأمد",
+    use_en: "Long-term blood sugar control",
+    warning_ar: "لا يستخدم في مشاكل الكبد",
+    warning_en: "Do not use in liver problems",
+    schedule_ar: "مرة واحدة يومياً مع وجبة العشاء",
+    schedule_en: "Once daily with dinner"
+  },
+  {
+    name_ar: "جلوبيرام",
+    name_en: "Globiram",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "حسب وصفة الطبيب (يجب الالتزام بالمواعيد)",
+    schedule_en: "As prescribed (Strict timing)"
+  },
+  {
+    name_ar: "لينزوبرازول",
+    name_en: "Linzoprazole",
+    use_ar: "يخفف حرقة المعدة",
+    use_en: "Reduces heartburn",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "لينيزوليد",
+    name_en: "Linezolid",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "كل 12 ساعة بانتظام",
+    schedule_en: "Every 12 hours regularly"
+  },
+  {
+    name_ar: "دوكسيسيكلين",
+    name_en: "Doxycycline",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "تجنب الشمس المباشرة",
+    warning_en: "Avoid direct sunlight",
+    schedule_ar: "مرة أو مرتين يومياً (مع كوب ماء كامل، تجنب الاستلقاء)",
+    schedule_en: "Once or twice daily (With full glass of water, don't lie down)"
+  },
+  {
+    name_ar: "تيتراسيكلين",
+    name_en: "Tetracycline",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "قد يسبب حساسية للجلد",
+    warning_en: "May cause skin allergy",
+    schedule_ar: "4 مرات يومياً (قبل الأكل بساعة أو بعده بساعتين)",
+    schedule_en: "4 times daily (1 hour before or 2 hours after food)"
+  },
+  {
+    name_ar: "ليفوثيروكسين",
+    name_en: "Levothyroxine",
+    use_ar: "يعوض هرمون الغدة الدرقية",
+    use_en: "Thyroid hormone replacement",
+    warning_ar: "يؤخذ على معدة فارغة",
+    warning_en: "Take on empty stomach",
+    schedule_ar: "مرة يومياً صباحاً على معدة فارغة (قبل الأكل بساعة)",
+    schedule_en: "Once daily morning on empty stomach (1 hour before food)"
+  },
+  {
+    name_ar: "غلوبيرام",
+    name_en: "Globiram",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "حسب وصفة الطبيب",
+    schedule_en: "As prescribed"
+  },
+  {
+    name_ar: "فينلافاكسين",
+    name_en: "Venlafaxine",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "قد يسبب صداع أو دوار",
+    warning_en: "May cause headache or dizziness",
+    schedule_ar: "مرة واحدة يومياً مع الطعام",
+    schedule_en: "Once daily with food"
+  },
+  {
+    name_ar: "أميتريبتيلين",
+    name_en: "Amitriptyline",
+    use_ar: "مضاد للاكتئاب",
+    use_en: "Antidepressant",
+    warning_ar: "قد يسبب نعاس وجفاف الفم",
+    warning_en: "May cause drowsiness and dry mouth",
+    schedule_ar: "مرة واحدة يومياً قبل النوم",
+    schedule_en: "Once daily before bedtime"
+  },
+  {
+    name_ar: "نورأدرينالين",
+    name_en: "Norepinephrine",
+    use_ar: "رفع ضغط الدم في الحالات الطارئة",
+    use_en: "Raises blood pressure in emergencies",
+    warning_ar: "استعمل فقط في المستشفى",
+    warning_en: "Use only in hospital",
+    schedule_ar: "حقن وريدي مستمر (في المستشفى فقط)",
+    schedule_en: "Continuous IV infusion (Hospital only)"
+  },
+  {
+    name_ar: "دوبامين",
+    name_en: "Dopamine",
+    use_ar: "زيادة ضغط الدم ومعدل ضربات القلب",
+    use_en: "Raises blood pressure and heart rate",
+    warning_ar: "يستعمل تحت إشراف طبي",
+    warning_en: "Use under medical supervision",
+    schedule_ar: "حقن وريدي مستمر (في المستشفى فقط)",
+    schedule_en: "Continuous IV infusion (Hospital only)"
+  },
+  {
+    name_ar: "إبينفرين",
+    name_en: "Epinephrine",
+    use_ar: "علاج الطوارئ للحساسية المفرطة",
+    use_en: "Emergency treatment for severe allergy",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "عند اللزوم في حالات الطوارئ القصوى",
+    schedule_en: "As needed in emergencies"
+  },
+  {
+    name_ar: "نورإبينفرين",
+    name_en: "Norepinephrine",
+    use_ar: "رفع ضغط الدم في الحالات الطارئة",
+    use_en: "Raises blood pressure in emergencies",
+    warning_ar: "يستعمل تحت إشراف طبي",
+    warning_en: "Use under medical supervision",
+    schedule_ar: "حقن وريدي مستمر (في المستشفى فقط)",
+    schedule_en: "Continuous IV infusion (Hospital only)"
+  },
+  {
+    name_ar: "جليبتين",
+    name_en: "Sitagliptin",
+    use_ar: "تحكم في سكر الدم",
+    use_en: "Controls blood sugar",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة واحدة يومياً مع أو بدون طعام",
+    schedule_en: "Once daily with or without food"
+  },
+  {
+    name_ar: "أولينزيم",
+    name_en: "Olanzapine",
+    use_ar: "مضاد للذهان",
+    use_en: "Antipsychotic",
+    warning_ar: "قد يسبب زيادة وزن",
+    warning_en: "May cause weight gain",
+    schedule_ar: "مرة واحدة يومياً (يفضل مساءً)",
+    schedule_en: "Once daily (Preferably evening)"
+  },
+  {
+    name_ar: "ريسبيريدون",
+    name_en: "Risperidone",
+    use_ar: "مضاد للذهان",
+    use_en: "Antipsychotic",
+    warning_ar: "قد يسبب نعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "Once or twice daily"
+  },
+  {
+    name_ar: "كويتيابين",
+    name_en: "Quetiapine",
+    use_ar: "مضاد للذهان",
+    use_en: "Antipsychotic",
+    warning_ar: "قد يسبب دوار",
+    warning_en: "May cause dizziness",
+    schedule_ar: "مرة أو مرتين يومياً (يفضل قبل النوم)",
+    schedule_en: "Once or twice daily (Preferably bedtime)"
+  },
+  {
+    name_ar: "أركيبرازول",
+    name_en: "Aripiprazole",
+    use_ar: "مضاد للذهان",
+    use_en: "Antipsychotic",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة واحدة يومياً في نفس الموعد",
+    schedule_en: "Once daily at the same time"
+  },
+  {
+    name_ar: "هالوبيريدول",
+    name_en: "Haloperidol",
+    use_ar: "مضاد للذهان",
+    use_en: "Antipsychotic",
+    warning_ar: "قد يسبب رعشة أو تيبس العضلات",
+    warning_en: "May cause tremor or muscle stiffness",
+    schedule_ar: "2-3 مرات يومياً حسب الحالة",
+    schedule_en: "2-3 times daily depending on condition"
+  },
+  {
+    name_ar: "لينزوليد",
+    name_en: "Linezolid",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "كل 12 ساعة بانتظام",
+    schedule_en: "Every 12 hours regularly"
+  },
+  {
+    name_ar: "سيفيكسيم",
+    name_en: "Cefixime",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة واحدة يومياً أو مقسمة على جرعتين",
+    schedule_en: "Once daily or divided into two doses"
+  },
+  {
+    name_ar: "سيفترياكسون",
+    name_en: "Ceftriaxone",
+    use_ar: "مضاد حيوي للعدوى",
+    use_en: "Antibiotic for infections",
+    warning_ar: "حقن عضلي أو وريدي فقط",
+    warning_en: "IM or IV injection only",
+    schedule_ar: "مرة واحدة يومياً (حقن)",
+    schedule_en: "Once daily (Injection)"
+  },
+  {
+    name_ar: "ميترونيدازول",
+    name_en: "Metronidazole",
+    use_ar: "مضاد للطفيليات والعدوى البكتيرية",
+    use_en: "Antibiotic and antiparasitic",
+    warning_ar: "تجنب الكحول",
+    warning_en: "Avoid alcohol",
+    schedule_ar: "كل 8 ساعات مع الأكل",
+    schedule_en: "Every 8 hours with food"
+  },
+  {
+    name_ar: "أوميبراتين",
+    name_en: "Omipratin",
+    use_ar: "مضاد حموضة المعدة",
+    use_en: "Stomach acid reducer",
+    warning_ar: "استعمل حسب وصفة الطبيب",
+    warning_en: "Use as prescribed",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "سولفوناميدات",
+    name_en: "Sulfonamides",
+    use_ar: "مضاد حيوي واسع الطيف",
+    use_en: "Broad-spectrum antibiotic",
+    warning_ar: "قد يسبب حساسية",
+    warning_en: "May cause allergy",
+    schedule_ar: "حسب تعليمات الطبيب (مع شرب ماء كثير)",
+    schedule_en: "As prescribed (Drink plenty of water)"
+  },
+  {
+    name_ar: "هيدروكلوروثيازيد",
+    name_en: "Hydrochlorothiazide",
+    use_ar: "مدر للبول لتخفيض ضغط الدم",
+    use_en: "Diuretic for lowering blood pressure",
+    warning_ar: "راقب الأملاح والسوائل",
+    warning_en: "Monitor electrolytes and fluids",
+    schedule_ar: "مرة واحدة يومياً في الصباح",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "فوروسيميد",
+    name_en: "Furosemide",
+    use_ar: "مدر للبول قوي",
+    use_en: "Potent diuretic",
+    warning_ar: "راقب ضغط الدم والأملاح",
+    warning_en: "Monitor blood pressure and electrolytes",
+    schedule_ar: "مرة واحدة صباحاً (أو مرتين: صباحاً وظهراً)",
+    schedule_en: "Once daily morning (or twice: morning/afternoon)"
+  },
+  {
+    name_ar: "سبيرونولاكتون",
+    name_en: "Spironolactone",
+    use_ar: "مدر للبول موازن للبوتاسيوم",
+    use_en: "Potassium-sparing diuretic",
+    warning_ar: "راقب مستويات البوتاسيوم",
+    warning_en: "Monitor potassium levels",
+    schedule_ar: "مرة واحدة يومياً مع الطعام",
+    schedule_en: "Once daily with food"
+  },
+  {
+    name_ar: "مانيتول",
+    name_en: "Mannitol",
+    use_ar: "مدر للبول ويخفف الضغط داخل الجمجمة",
+    use_en: "Diuretic and reduces intracranial pressure",
+    warning_ar: "استعمل تحت إشراف طبي",
+    warning_en: "Use under medical supervision",
+    schedule_ar: "حقن وريدي (في المستشفى فقط)",
+    schedule_en: "IV Injection (Hospital only)"
+  },
+  {
+    name_ar: "بيتا بلوكر",
+    name_en: "Beta Blocker",
+    use_ar: "يخفض ضغط الدم ومعدل ضربات القلب",
+    use_en: "Lowers blood pressure and heart rate",
+    warning_ar: "لا تتوقف فجأة عن الدواء",
+    warning_en: "Do not stop suddenly",
+    schedule_ar: "حسب نوع الدواء (غالباً صباحاً)",
+    schedule_en: "Depending on drug (Usually morning)"
+  },
+  {
+    name_ar: "أتينولول",
+    name_en: "Atenolol",
+    use_ar: "يخفض ضغط الدم",
+    use_en: "Lowers blood pressure",
+    warning_ar: "استشر الطبيب قبل الاستخدام",
+    warning_en: "Consult doctor before use",
+    schedule_ar: "مرة واحدة يومياً صباحاً",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "ديكستروميثورفان",
+    name_en: "Dextromethorphan",
+    use_ar: "مهدئ للسعال الجاف",
+    use_en: "Cough suppressant for dry cough",
+    warning_ar: "لا يستخدم للسعال المصحوب ببلغم",
+    warning_en: "Do not use for productive cough",
+    schedule_ar: "كل 6-8 ساعات عند اللزوم",
+    schedule_en: "Every 6-8 hours as needed"
+  },
+  {
+    name_ar: "جوايفينيسين",
+    name_en: "Guaifenesin",
+    use_ar: "طارد للبلغم",
+    use_en: "Expectorant to loosen chest congestion",
+    warning_ar: "اشرب الكثير من السوائل معه",
+    warning_en: "Drink plenty of fluids",
+    schedule_ar: "كل 4 ساعات (مع شرب ماء كثير)",
+    schedule_en: "Every 4 hours (Drink plenty of water)"
+  },
+  {
+    name_ar: "فيتامين د3",
+    name_en: "Vitamin D3",
+    use_ar: "دعم صحة العظام والمناعة",
+    use_en: "Supports bone health and immunity",
+    warning_ar: "يجب فحص مستواه في الدم قبل الاستخدام",
+    warning_en: "Check blood levels before use",
+    schedule_ar: "مرة يومياً أو أسبوعياً (بعد وجبة دسمة)",
+    schedule_en: "Once daily or weekly (After fatty meal)"
+  },
+  {
+    name_ar: "أوميغا 3",
+    name_en: "Omega-3",
+    use_ar: "دعم صحة القلب والدماغ",
+    use_en: "Supports heart and brain health",
+    warning_ar: "استشر الطبيب إذا كنت تتناول مسيلات الدم",
+    warning_en: "Consult doctor if taking blood thinners",
+    schedule_ar: "مرة أو مرتين يومياً بعد الأكل",
+    schedule_en: "Once or twice daily after meals"
+  },
+  {
+    name_ar: "ميتوكلوبراميد",
+    name_en: "Metoclopramide",
+    use_ar: "علاج الغثيان والقيء",
+    use_en: "Treats nausea and vomiting",
+    warning_ar: "قد يسبب النعاس",
+    warning_en: "May cause drowsiness",
+    schedule_ar: "قبل الأكل بـ 30 دقيقة (عند اللزوم)",
+    schedule_en: "30 mins before meals (As needed)"
+  },
+  {
+    name_ar: "بيسوبرولول",
+    name_en: "Bisoprolol",
+    use_ar: "علاج ضغط الدم وفشل القلب",
+    use_en: "Treats hypertension and heart failure",
+    warning_ar: "لا تتوقف عن تناوله فجأة",
+    warning_en: "Do not stop suddenly",
+    schedule_ar: "مرة واحدة يومياً صباحاً",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "بريدنيزولون",
+    name_en: "Prednisolone",
+    use_ar: "مضاد للالتهابات والحساسية الشديدة",
+    use_en: "Steroid for inflammation and allergies",
+    warning_ar: "يقلل المناعة عند الاستخدام الطويل",
+    warning_en: "Reduces immunity with long-term use",
+    schedule_ar: "مرة واحدة صباحاً مع الأكل (لتجنب الأرق)",
+    schedule_en: "Once daily morning with food (Avoid insomnia)"
+  },
+  {
+    name_ar: "تيربينافين",
+    name_en: "Terbinafine",
+    use_ar: "مضاد للفطريات الجلدية",
+    use_en: "Antifungal for skin infections",
+    warning_ar: "راقب وظائف الكبد",
+    warning_en: "Monitor liver function",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "غابابنتين",
+    name_en: "Gabapentin",
+    use_ar: "علاج آلام الأعصاب والصرع",
+    use_en: "Treats nerve pain and epilepsy",
+    warning_ar: "قد يسبب الدوار",
+    warning_en: "May cause dizziness",
+    schedule_ar: "3 مرات يومياً (ابدأ بجرعة منخفضة مساءً)",
+    schedule_en: "3 times daily (Start low dose at evening)"
+  },
+  {
+    name_ar: "ميثوكاربامول",
+    name_en: "Methocarbamol",
+    use_ar: "مرخي للعضلات في حالات التشنج",
+    use_en: "Muscle relaxant for muscle spasms",
+    warning_ar: "تجنب القيادة بعد تناوله",
+    warning_en: "Avoid driving after taking it",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "كلوتريمازول",
+    name_en: "Clotrimazole",
+    use_ar: "علاج الفطريات الموضعية",
+    use_en: "Treats topical fungal infections",
+    warning_ar: "للاستخدام الخارجي فقط",
+    warning_en: "For external use only",
+    schedule_ar: "دهان موضعي 2-3 مرات يومياً",
+    schedule_en: "Apply topically 2-3 times daily"
+  },
+  {
+    name_ar: "جليبيزيد",
+    name_en: "Glipizide",
+    use_ar: "علاج السكري من النوع الثاني",
+    use_en: "Treats type 2 diabetes",
+    warning_ar: "قد يسبب انخفاض حاد في سكر الدم",
+    warning_en: "May cause severe hypoglycemia",
+    schedule_ar: "قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "30 minutes before breakfast"
+  },
+  {
+    name_ar: "بيسوكوديل",
+    name_en: "Bisacodyl",
+    use_ar: "ملين لعلاج الإمساك",
+    use_en: "Laxative for constipation",
+    warning_ar: "لا يستخدم لأكثر من 7 أيام",
+    warning_en: "Do not use for more than 7 days",
+    schedule_ar: "مرة واحدة مساءً قبل النوم",
+    schedule_en: "Once daily at bedtime"
+  },
+  {
+    name_ar: "هيدروكورتيزون",
+    name_en: "Hydrocortisone",
+    use_ar: "كريم لعلاج التهابات الجلد والحكة",
+    use_en: "Cream for skin inflammation and itching",
+    warning_ar: "تجنب وضعه على الجروح المفتوحة",
+    warning_en: "Avoid applying on open wounds",
+    schedule_ar: "دهان موضعي 1-2 مرة يومياً",
+    schedule_en: "Apply topically 1-2 times daily"
+  },
+  {
+    name_ar: "ميبيريدين",
+    name_en: "Meperidine",
+    use_ar: "مسكن قوي للآلام",
+    use_en: "Strong pain reliever",
+    warning_ar: "قد يسبب إدمان وتثبيط تنفسي",
+    warning_en: "May cause addiction and respiratory depression",
+    schedule_ar: "حسب وصفة الطبيب بدقة (داخل المستشفى غالباً)",
+    schedule_en: "Strictly as prescribed (Usually inpatient)"
+  },
+  {
+    name_ar: "كيتوفان",
+    name_en: "Ketofan",
+    use_ar: "مسكن للآلام ومضاد للالتهابات",
+    use_en: "Analgesic and anti-inflammatory",
+    warning_ar: "قد يسبب تهيجاً في المعدة",
+    warning_en: "May cause stomach irritation",
+    schedule_ar: "بعد الأكل عند اللزوم",
+    schedule_en: "After meals when needed"
+  },
+  {
+    name_ar: "دولبرين",
+    name_en: "Doliprane",
+    use_ar: "مسكن للألم وخافض للحرارة",
+    use_en: "Pain reliever and fever reducer",
+    warning_ar: "لا تتجاوز الجرعة المحددة لتجنب تضرر الكبد",
+    warning_en: "Do not exceed the dose to avoid liver damage",
+    schedule_ar: "عند اللزوم (كل 6 ساعات)",
+    schedule_en: "When needed (Every 6 hours)"
+  },
+  {
+    name_ar: "أوفلوكساسين",
+    name_en: "Ofloxacin",
+    use_ar: "مضاد حيوي لعلاج عدوى الأذن والعين والمسالك البولية",
+    use_en: "Antibiotic for ear, eye, and urinary tract infections",
+    warning_ar: "قد يزيد من حساسية الجلد تجاه الشمس",
+    warning_en: "May increase skin sensitivity to sunlight",
+    schedule_ar: "كل 12 ساعة بانتظام",
+    schedule_en: "Every 12 hours regularly"
+  },
+  {
+    name_ar: "ألوبورينول",
+    name_en: "Allopurinol",
+    use_ar: "لعلاج النقرس ومنع تكون حصوات الكلى",
+    use_en: "Treats gout and prevents kidney stones",
+    warning_ar: "يجب شرب كميات كبيرة من الماء يومياً",
+    warning_en: "Must drink plenty of water daily",
+    schedule_ar: "مرة واحدة يومياً بعد الأكل",
+    schedule_en: "Once daily after meals"
+  },
+  {
+    name_ar: "تريبتان (سوماتريبتان)",
+    name_en: "Sumatriptan",
+    use_ar: "لعلاج نوبات الصداع النصفي (الشقيقة)",
+    use_en: "Treats migraine attacks",
+    warning_ar: "لا يستخدم للوقاية، بل عند بدء النوبة فقط",
+    warning_en: "Used for treatment, not prevention",
+    schedule_ar: "عند بداية نوبة الصداع النصفي",
+    schedule_en: "At the onset of migraine attack"
+  },
+  {
+    name_ar: "كلورفينيرامين",
+    name_en: "Chlorpheniramine",
+    use_ar: "مضاد للحساسية (حمى القش، الحكة، سيلان الأنف)",
+    use_en: "Antihistamine for allergies, itching, and runny nose",
+    warning_ar: "يسبب نعاساً شديداً؛ تجنب القيادة",
+    warning_en: "Causes severe drowsiness; avoid driving",
+    schedule_ar: "كل 4-6 ساعات (يسبب النعاس)",
+    schedule_en: "Every 4-6 hours (Causes drowsiness)"
+  },
+  {
+    name_ar: "سيبروفلوكساسين",
+    name_en: "Ciprofloxacin",
+    use_ar: "مضاد حيوي واسع المدى للالتهابات البكتيرية",
+    use_en: "Broad-spectrum antibiotic for bacterial infections",
+    warning_ar: "تجنب التعرض المباشر للشمس أثناء العلاج",
+    warning_en: "Avoid direct sun exposure during treatment",
+    schedule_ar: "كل 12 ساعة (تجنب منتجات الألبان معه)",
+    schedule_en: "Every 12 hours (Avoid dairy products with it)"
+  },
+  {
+    name_ar: "كلوبيدوجريل",
+    name_en: "Clopidogrel",
+    use_ar: "لمنع تجلط الدم وحماية مرضى القلب",
+    use_en: "Prevents blood clots and protects heart patients",
+    warning_ar: "أخبر الطبيب قبل إجراء أي عملية جراحية",
+    warning_en: "Inform doctor before any surgical procedure",
+    schedule_ar: "مرة واحدة يومياً في نفس الموعد",
+    schedule_en: "Once daily at the same time"
+  },
+  {
+    name_ar: "نيكسيوم (إيسوميبرازول)",
+    name_en: "Nexium (Esomeprazole)",
+    use_ar: "لعلاج ارتجاع المريء وقرحة المعدة الشديدة",
+    use_en: "Treats GERD and severe stomach ulcers",
+    warning_ar: "يُفضل تناوله قبل الإفطار بـ 30 دقيقة",
+    warning_en: "Best taken 30 minutes before breakfast",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "سبازمومين",
+    name_en: "Spasmomen",
+    use_ar: "لعلاج تقلصات القولون العصبي وآلام البطن",
+    use_en: "Treats IBS cramps and abdominal pain",
+    warning_ar: "قد يسبب جفاف في الفم لدى بعض المرضى",
+    warning_en: "May cause dry mouth in some patients",
+    schedule_ar: "قبل الأكل بـ 20 دقيقة (3 مرات يومياً)",
+    schedule_en: "20 mins before meals (3 times daily)"
+  },
+  {
+    name_ar: "أوجمنتين",
+    name_en: "Augmentin",
+    use_ar: "مضاد حيوي لعلاج التهابات الجهاز التنفسي والأذن",
+    use_en: "Antibiotic for respiratory and ear infections",
+    warning_ar: "يجب إكمال الكورس العلاجي بالكامل حتى لو شعرت بالتحسن",
+    warning_en: "Must finish the full course even if feeling better",
+    schedule_ar: "كل 12 ساعة (بداية الوجبة لتقليل ألم المعدة)",
+    schedule_en: "Every 12 hours (Start of meal to reduce stomach pain)"
+  },
+  {
+    name_ar: "كيبرا (ليفيتيراسيتام)",
+    name_en: "Keppra (Levetiracetam)",
+    use_ar: "لعلاج نوبات الصرع والتحكم في التشنجات",
+    use_en: "Treats epilepsy and controls seizures",
+    warning_ar: "قد يسبب النعاس أو التغيرات المزاجية",
+    warning_en: "May cause drowsiness or mood changes",
+    schedule_ar: "مرتين يومياً (كل 12 ساعة بدقة)",
+    schedule_en: "Twice daily (Every 12 hours strictly)"
+  },
+  {
+    name_ar: "بروسبان",
+    name_en: "Prospan",
+    use_ar: "شراب طبيعي لعلاج السعال الطارد للبلغم",
+    use_en: "Natural syrup for productive cough",
+    warning_ar: "رج الزجاجة جيداً قبل الاستخدام",
+    warning_en: "Shake well before use",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "أوميغا 3",
+    name_en: "Omega 3",
+    use_ar: "لدعم صحة القلب والدماغ وتقليل الدهون الثلاثية",
+    use_en: "Supports heart and brain health",
+    warning_ar: "قد يزيد من سيولة الدم بجرعات عالية جداً",
+    warning_en: "May increase blood thinning at very high doses",
+    schedule_ar: "مرة أو مرتين يومياً بعد الأكل",
+        schedule_en: "Once or twice daily after meals"
+  },
+  {
+    name_ar: "ليبيتور",
+    name_en: "Lipitor",
+    use_ar: "لخفض مستويات الكوليسترول الضار في الدم",
+    use_en: "Lowers LDL cholesterol levels",
+    warning_ar: "أبلغ الطبيب فوراً إذا شعرت بآلام عضلية غير مبررة",
+    warning_en: "Report unexplained muscle pain to your doctor",
+    schedule_ar: "مرة واحدة يومياً في المساء",
+    schedule_en: "Once daily in the evening"
+  },
+  {
+    name_ar: "فولتارين (ديكلوفيناك)",
+    name_en: "Voltaren (Diclofenac)",
+    use_ar: "مسكن قوي للآلام ومضاد لالتهابات المفاصل",
+    use_en: "Strong pain reliever and anti-inflammatory",
+    warning_ar: "يجب تناوله بعد الأكل لتجنب تهيج المعدة",
+    warning_en: "Should be taken after food to avoid stomach irritation",
+    schedule_ar: "بعد الأكل مباشرة (مرتين أو ثلاث مرات يومياً)",
+    schedule_en: "Immediately after meals (2-3 times daily)"
+  },
+  {
+    name_ar: "جلوكوفاج",
+    name_en: "Glucophage",
+    use_ar: "منظم للسكر ويساعد في علاج تكيس المبايض",
+    use_en: "Sugar regulator and treats PCOS",
+    warning_ar: "يجب شرب الكثير من الماء أثناء استخدامه",
+    warning_en: "Drink plenty of water while using it",
+    schedule_ar: "مع أو بعد وجبة الطعام مباشرة",
+    schedule_en: "With or immediately after meals"
+  },
+  {
+    name_ar: "بانادول نايت",
+    name_en: "Panadol Night",
+    use_ar: "مسكن للآلام يساعد على النوم (للصداع الليلي)",
+    use_en: "Pain reliever that aids sleep",
+    warning_ar: "لا تقم بقيادة السيارة بعد تناوله لأنه يسبب النعاس",
+    warning_en: "Do not drive after taking it as it causes drowsiness",
+    schedule_ar: "قبل النوم بـ 20 دقيقة",
+    schedule_en: "20 minutes before bedtime"
+  },
+  {
+    name_ar: "فيروغلوبين (حديد)",
+    name_en: "Feroglobin (Iron)",
+    use_ar: "لعلاج فقر الدم (الأنيميا) ونقص الحديد",
+    use_en: "Treats anemia and iron deficiency",
+    warning_ar: "قد يغير لون البراز إلى الأسود، وهذا طبيعي",
+    warning_en: "May turn stools black, which is normal",
+    schedule_ar: "بعد الأكل (لتجنب الغثيان) أو حسب وصفة الطبيب",
+    schedule_en: "After meals (to avoid nausea) or as prescribed"
+  },
+  {
+    name_ar: "كلاريتين (لوراتادين)",
+    name_en: "Claritin (Loratadine)",
+    use_ar: "مضاد للحساسية لا يسبب النعاس",
+    use_en: "Non-drowsy antihistamine for allergies",
+    warning_ar: "يفضل تناوله في نفس الوقت يومياً",
+    warning_en: "Best taken at the same time every day",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "جافيسكون",
+    name_en: "Gaviscon",
+    use_ar: "لعلاج حرقة المعدة وارتجاع المريء السريع",
+    use_en: "Relieves heartburn and acid reflux fast",
+    warning_ar: "يؤخذ بعد الأكل وقبل النوم",
+    warning_en: "Take after meals and before bedtime",
+    schedule_ar: "بعد الأكل وقبل النوم عند الحاجة",
+    schedule_en: "After meals and before bedtime when needed"
+  },
+  {
+    name_ar: "كونكورد (بيسوبرولول)",
+    name_en: "Concor (Bisoprolol)",
+    use_ar: "لعلاج ارتفاع ضغط الدم وتنظيم ضربات القلب",
+    use_en: "Treats hypertension and regulates heart rate",
+    warning_ar: "يجب عدم التوقف عن تناوله فجأة",
+    warning_en: "Must not be stopped suddenly",
+    schedule_ar: "مرة واحدة يومياً صباحاً في نفس الموعد",
+    schedule_en: "Once daily in the morning at the same time"
+  },
+  {
+    name_ar: "بيتادين (محلول)",
+    name_en: "Betadine (Solution)",
+    use_ar: "مطهر للجروح والخدوش وقتل الجراثيم",
+    use_en: "Antiseptic for wounds and scratches",
+    warning_ar: "للاستخدام الخارجي فقط",
+    warning_en: "For external use only",
+    schedule_ar: "عند اللزوم لتطهير الجروح",
+    schedule_en: "As needed for wound disinfection"
+  },
+  {
+    name_ar: "هاي-فايت (فيتامينات)",
+    name_en: "Hi-Vit (Multivitamins)",
+    use_ar: "مكمل غذائي لتعزيز النشاط والتركيز",
+    use_en: "Multivitamin for energy and focus",
+    warning_ar: "يفضل تناوله بعد الإفطار",
+    warning_en: "Best taken after breakfast",
+    schedule_ar: "مرة واحدة يومياً بعد الإفطار",
+    schedule_en: "Once daily after breakfast"
+  },
+  {
+    name_ar: "موف (دهان)",
+    name_en: "Moov",
+    use_ar: "تخفيف آلام العضلات والظهر والالتواءات",
+    use_en: "Relieves muscle and back pain",
+    warning_ar: "تجنب ملامسته للعينين أو الجروح المفتوحة",
+    warning_en: "Avoid contact with eyes or open wounds",
+    schedule_ar: "دهان موضعي 3-4 مرات يومياً",
+    schedule_en: "Apply topically 3-4 times daily"
+  },
+  {
+    name_ar: "سولبادين",
+    name_en: "Solpadeine",
+    use_ar: "مسكن قوي جداً للصداع وآلام الأسنان",
+    use_en: "Very strong painkiller for headaches and toothache",
+    warning_ar: "يحتوي على الكافيين والكوديين، لا يكرر بكثرة",
+    warning_en: "Contains caffeine and codeine; don't overuse",
+    schedule_ar: "عند اللزوم (يذاب في الماء)",
+    schedule_en: "When needed (Dissolve in water)"
+  },
+  {
+    name_ar: "ديكسازون",
+    name_en: "Dexazone",
+    use_ar: "لعلاج الالتهابات الشديدة وحساسية الصدر",
+    use_en: "Treats severe inflammation and asthma",
+    warning_ar: "يستخدم فقط بإشراف طبي دقيق جداً",
+    warning_en: "Use only under strict medical supervision",
+    schedule_ar: "حسب تعليمات الطبيب بدقة (غالباً صباحاً)",
+    schedule_en: "Strictly as prescribed (Usually morning)"
+  },
+  {
+    name_ar: "كانستين (كريم)",
+    name_en: "Canesten (Cream)",
+    use_ar: "مضاد للفطريات الجلدية والقدم الرياضي",
+    use_en: "Antifungal for skin and athlete's foot",
+    warning_ar: "يستمر العلاج لعدة أيام بعد اختفاء الأعراض",
+    warning_en: "Continue use for days after symptoms clear",
+    schedule_ar: "دهان موضعي 2-3 مرات يومياً",
+    schedule_en: "Apply topically 2-3 times daily"
+  },
+  {
+    name_ar: "هاي فريش (قطرة)",
+    name_en: "Hylo-Fresh",
+    use_ar: "ترطيب العين وعلاج الجفاف الناتج عن الشاشات",
+    use_en: "Lubricates eyes and treats dryness from screens",
+    warning_ar: "تخلص من العبوة بعد شهر من فتحها",
+    warning_en: "Discard one month after opening",
+    schedule_ar: "عند اللزوم (يمكن استخدامها يومياً)",
+    schedule_en: "As needed (Safe for daily use)"
+  },
+  {
+    name_ar: "ميبو (مرهم)",
+    name_en: "MEBO",
+    use_ar: "علاج الحروق والجروح وتجديد خلايا الجلد",
+    use_en: "Treats burns, wounds, and skin regeneration",
+    warning_ar: "رائحته تشبه زيت السمسم وهذا طبيعي",
+    warning_en: "Smells like sesame oil, which is normal",
+    schedule_ar: "دهان موضعي 3-4 مرات يومياً (طبقة رقيقة)",
+    schedule_en: "Apply topically 3-4 times daily (thin layer)"
+  },
+  {
+    name_ar: "بيتاسيرك",
+    name_en: "Betaserc",
+    use_ar: "علاج الدوار والطنين ومشاكل الأذن الوسطى",
+    use_en: "Treats vertigo, tinnitus, and inner ear issues",
+    warning_ar: "يفضل تناوله مع الطعام لتقليل تهيج المعدة",
+    warning_en: "Best taken with food to reduce stomach irritation",
+    schedule_ar: "مرتين أو 3 مرات يومياً مع الأكل",
+    schedule_en: "2-3 times daily with meals"
+  },
+  {
+    name_ar: "ستريبسلز",
+    name_en: "Strepsils",
+    use_ar: "تخفيف آلام الحلق والتهاب اللوزتين",
+    use_en: "Relieves sore throat and tonsillitis",
+    warning_ar: "لا يعطى للأطفال دون سن 6 سنوات",
+    warning_en: "Do not give to children under 6 years old",
+    schedule_ar: "قرص استحلاب كل 2-3 ساعات",
+    schedule_en: "Lozenge every 2-3 hours"
+  },
+  {
+    name_ar: "كيبوريكس",
+    name_en: "Ceporex",
+    use_ar: "مضاد حيوي لعلاج التهابات الجلد والمسالك",
+    use_en: "Antibiotic for skin and urinary infections",
+    warning_ar: "يجب التأكد من عدم وجود حساسية تجاه البنسلين",
+    warning_en: "Ensure no penicillin allergy exists",
+    schedule_ar: "كل 6 أو 12 ساعة حسب التركيز",
+    schedule_en: "Every 6 or 12 hours depending on dosage"
+  },
+  {
+    name_ar: "فلاجيل (مترونيدازول)",
+    name_en: "Flagyl",
+    use_ar: "مطهر معوي وعلاج للطفيليات والإسهال",
+    use_en: "Intestinal antiseptic and treats parasites",
+    warning_ar: "قد يترك طعماً معدنياً في الفم",
+    warning_en: "May leave a metallic taste in the mouth",
+    schedule_ar: "كل 8 ساعات بعد الأكل",
+    schedule_en: "Every 8 hours after meals"
+  },
+  {
+    name_ar: "بروتون",
+    name_en: "Proton",
+    use_ar: "علاج حموضة المعدة المزمنة وحماية المريء",
+    use_en: "Treats chronic acidity and protects esophagus",
+    warning_ar: "يؤخذ قرص واحد يومياً قبل الإفطار",
+    warning_en: "Take one tablet daily before breakfast",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "ألفintern",
+    name_en: "Alphintern",
+    use_ar: "مضاد للتورم والالتهابات بعد العمليات والكدمات",
+    use_en: "Anti-inflammatory and anti-swelling after injury",
+    warning_ar: "يجب تناوله قبل الأكل بساعة كاملة",
+    warning_en: "Must be taken one hour before meals",
+    schedule_ar: "قبل الأكل بساعة أو بعده بساعتين (3 مرات يومياً)",
+    schedule_en: "1 hour before or 2 hours after meals (3 times daily)"
+  },
+  {
+    name_ar: "نيوروتون",
+    name_en: "Neuroton",
+    use_ar: "فيتامين ب المركب لتقوية الأعصاب والتركيز",
+    use_en: "Vitamin B complex for nerve health and focus",
+    warning_ar: "آمن غالباً ولكن لا تفرط في الجرعة",
+    warning_en: "Generally safe, but do not exceed dose",
+    schedule_ar: "مرة واحدة يومياً بعد الأكل",
+    schedule_en: "Once daily after meals"
+  },
+  {
+    name_ar: "موتينيوم",
+    name_en: "Motilium",
+    use_ar: "علاج الغثيان والقيء وتنظيم حركة المعدة",
+    use_en: "Treats nausea, vomiting, and regulates stomach",
+    warning_ar: "يمنع لبعض مرضى القلب؛ استشر طبيبك",
+    warning_en: "Contraindicated for some heart patients; consult doctor",
+    schedule_ar: "قبل الأكل بـ 15-30 دقيقة",
+    schedule_en: "15-30 mins before meals"
+  },
+  {
+    name_ar: "إكسيدرين",
+    name_en: "Excedrin",
+    use_ar: "علاج قوي للصداع النصفي وآلام الرأس الحادة",
+    use_en: "Effective for migraines and severe headaches",
+    warning_ar: "يحتوي على الكافيين؛ لا تتناوله قبل النوم",
+    warning_en: "Contains caffeine; do not take before sleep",
+    schedule_ar: "عند اللزوم (يفضل بعد الأكل)",
+    schedule_en: "When needed (Preferably after meals)"
+  },
+  {
+    name_ar: "كابتوبریل",
+    name_en: "Captopril",
+    use_ar: "علاج سريع لارتفاع ضغط الدم وحماية القلب",
+    use_en: "Treats high blood pressure and protects the heart",
+    warning_ar: "يؤخذ عادة قبل الأكل بساعة واحدة",
+    warning_en: "Usually taken one hour before meals",
+    schedule_ar: "قبل الأكل بساعة (أو حسب الوصفة)",
+    schedule_en: "1 hour before meals (or as prescribed)"
+  },
+  {
+    name_ar: "زنك (مكمل)",
+    name_en: "Zinc Supplement",
+    use_ar: "تقوية المناعة، صحة الجلد، وتسريع التئام الجروح",
+    use_en: "Boosts immunity, skin health, and wound healing",
+    warning_ar: "قد يسبب غثيان إذا أخذ على معدة فارغة",
+    warning_en: "May cause nausea if taken on an empty stomach",
+    schedule_ar: "مرة يومياً بعد الأكل بساعتين أو قبل النوم",
+    schedule_en: "Once daily 2 hours after food or before bed"
+  },
+  {
+    name_ar: "مالوكس",
+    name_en: "Maalox",
+    use_ar: "مضاد للحموضة وعلاج سريع لانتفاخ البطن",
+    use_en: "Antacid and fast treatment for bloating",
+    warning_ar: "يفضل رجه جيداً إذا كان معلقاً سائلاً",
+    warning_en: "Shake well if it's a liquid suspension",
+    schedule_ar: "بعد الأكل بـ 20 دقيقة وعند النوم",
+    schedule_en: "20 mins after meals and at bedtime"
+  },
+  {
+    name_ar: "لانسوبرازول",
+    name_en: "Lansoprazole",
+    use_ar: "تقليل إفراز الأحماض وعلاج قرحة المعدة",
+    use_en: "Reduces acid secretion and treats gastric ulcers",
+    warning_ar: "يجب ابتلاع الكبسولة كاملة دون مضغ",
+    warning_en: "Swallow the capsule whole without chewing",
+    schedule_ar: "مرة يومياً قبل الإفطار بـ 30 دقيقة",
+    schedule_en: "Once daily, 30 mins before breakfast"
+  },
+  {
+    name_ar: "أوميغا 3 جونيور",
+    name_en: "Omega 3 Junior",
+    use_ar: "شراب للأطفال لتحسين التركيز والنشاط الذهني",
+    use_en: "Syrup for kids to improve focus and mental activity",
+    warning_ar: "يحفظ في الثلاجة بعد الفتح",
+    warning_en: "Store in the refrigerator after opening",
+    schedule_ar: "مرة واحدة يومياً بعد الأكل",
+    schedule_en: "Once daily after meals"
+  },
+  {
+    name_ar: "دافلون",
+    name_en: "Daflon",
+    use_ar: "علاج لتقوية الأوعية الدموية وحالات البواسير",
+    use_en: "Treats hemorrhoids and strengthens blood vessels",
+    warning_ar: "يستخدم بانتظام للحصول على نتائج جيدة",
+    warning_en: "Use regularly for best results",
+    schedule_ar: "مرتين يومياً (ظهراً ومساءً) مع الأكل",
+    schedule_en: "Twice daily (midday and evening) with meals"
+  },
+  {
+    name_ar: "ديكسازون (قطرة)",
+    name_en: "Dexazone (Drops)",
+    use_ar: "علاج التهابات وحساسية العين أو الأذن",
+    use_en: "Treats eye or ear inflammation and allergies",
+    warning_ar: "لا تستخدمها إذا كان هناك اشتباه في وجود فطريات",
+    warning_en: "Do not use if a fungal infection is suspected",
+    schedule_ar: "حسب تعليمات الطبيب (غالباً 3-4 مرات)",
+    schedule_en: "As prescribed (Usually 3-4 times)"
+  },
+  {
+    name_ar: "ترايمد فلو",
+    name_en: "Trimed Flu",
+    use_ar: "علاج أعراض نزلات البرد والرشح واحتقان الجيوب",
+    use_en: "Treats cold symptoms, runny nose, and sinus congestion",
+    warning_ar: "قد يسبب جفافاً في الفم أو النعاس",
+    warning_en: "May cause dry mouth or drowsiness",
+    schedule_ar: "مرتين أو 3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "أوجمانتين (شراب)",
+    name_en: "Augmentin (Suspension)",
+    use_ar: "مضاد حيوي للأطفال لعلاج اللوزتين والأذن",
+    use_en: "Antibiotic for children (tonsillitis/ear infections)",
+    warning_ar: "يجب التخلص من العبوة بعد 7-10 أيام من حلّها",
+    warning_en: "Discard after 7-10 days of reconstitution",
+    schedule_ar: "كل 12 ساعة بانتظام",
+    schedule_en: "Every 12 hours regularly"
+  },
+  {
+    name_ar: "أوتريفين",
+    name_en: "Otrivin",
+    use_ar: "علاج سريع لاحتقان الأنف والجيوب الأنفية",
+    use_en: "Relieves nasal congestion and sinusitis",
+    warning_ar: "لا يستخدم لأكثر من 5 أيام متتالية لتجنب الاحتقان المرتد",
+    warning_en: "Do not use for more than 5 days to avoid rebound congestion",
+    schedule_ar: "2-3 مرات يومياً (بحد أقصى 5 أيام)",
+    schedule_en: "2-3 times daily (Max 5 days)"
+  },
+  {
+    name_ar: "فنستيل",
+    name_en: "Fenistil",
+    use_ar: "مضاد للحساسية، الحكة، ولدغات الحشرات",
+    use_en: "Antihistamine for itching and insect bites",
+    warning_ar: "قد يسبب النعاس خاصة لدى الأطفال",
+    warning_en: "May cause drowsiness, especially in children",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "كيبوريكس",
+    name_en: "Ceporex",
+    use_ar: "مضاد حيوي واسع المدى لالتهابات الحلق والجلد",
+    use_en: "Broad-spectrum antibiotic for throat and skin",
+    warning_ar: "تأكد من عدم وجود حساسية تجاه السيفالوسبورينات",
+    warning_en: "Ensure no allergy to cephalosporins",
+    schedule_ar: "كل 6 أو 12 ساعة حسب الجرعة",
+    schedule_en: "Every 6 or 12 hours per dose"
+  },
+  {
+    name_ar: "إليفيات",
+    name_en: "Elevit",
+    use_ar: "فيتامينات متكاملة للمرأة أثناء فترة الحمل",
+    use_en: "Comprehensive multivitamins for pregnancy",
+    warning_ar: "يؤخذ بوصفة طبية لمتابعة نسب الحديد والزنك",
+    warning_en: "Take under medical supervision for iron/zinc levels",
+    schedule_ar: "مرة واحدة يومياً بعد الغداء",
+    schedule_en: "Once daily after lunch"
+  },
+  {
+    name_ar: "أدفيل",
+    name_en: "Advil",
+    use_ar: "مسكن للآلام، خافض للحرارة، ومضاد للالتهاب",
+    use_en: "Pain reliever, fever reducer, and anti-inflammatory",
+    warning_ar: "تجنب استخدامه إذا كنت تعاني من قرحة المعدة",
+    warning_en: "Avoid if you have stomach ulcers",
+    schedule_ar: "كل 6-8 ساعات بعد الأكل",
+    schedule_en: "Every 6-8 hours after meals"
+  },
+  {
+    name_ar: "إيريثرومايسين",
+    name_en: "Erythromycin",
+    use_ar: "مضاد حيوي بديل للبنسلين لعلاج العدوى التنفسية",
+    use_en: "Antibiotic alternative to penicillin for respiratory infections",
+    warning_ar: "قد يسبب تشنجات في البطن أو غثيان",
+    warning_en: "May cause abdominal cramps or nausea",
+    schedule_ar: "كل 6 أو 12 ساعة بانتظام",
+    schedule_en: "Every 6 or 12 hours regularly"
+  },
+  {
+    name_ar: "سبازموكانولاز",
+    name_en: "Spasmocanulase",
+    use_ar: "علاج عسر الهضم والانتفاخ وتقلصات القولون",
+    use_en: "Treats indigestion, bloating, and colon spasms",
+    warning_ar: "يفضل تناوله أثناء أو بعد الوجبات مباشرة",
+    warning_en: "Best taken during or immediately after meals",
+    schedule_ar: "مع الأكل 3 مرات يومياً",
+    schedule_en: "With meals 3 times daily"
+  },
+  {
+    name_ar: "بروفين (شراب)",
+    name_en: "Brufen (Syrup)",
+    use_ar: "خافض حرارة فعال ومسكن لآلام الأطفال",
+    use_en: "Effective fever reducer and painkiller for children",
+    warning_ar: "يحدد الوزن الجرعة المناسبة للطفل بدقة",
+    warning_en: "Dose is strictly based on the child's weight",
+    schedule_ar: "كل 8 ساعات بعد الأكل",
+    schedule_en: "Every 8 hours after meals"
+  },
+  {
+    name_ar: "كلوفاتيل",
+    name_en: "Clofatil",
+    use_ar: "علاج القولون العصبي والاضطرابات الهضمية",
+    use_en: "Treats IBS and digestive disorders",
+    warning_ar: "قد يسبب جفافاً مؤقتاً في الفم",
+    warning_en: "May cause temporary dry mouth",
+    schedule_ar: "قبل الأكل بـ 20 دقيقة",
+    schedule_en: "20 mins before meals"
+  },
+  {
+    name_ar: "فيتامين سي (فوار)",
+    name_en: "Vitamin C (Effervescent)",
+    use_ar: "دعم المناعة والوقاية من نزلات البرد",
+    use_en: "Boosts immunity and prevents common cold",
+    warning_ar: "لا ينصح به لمن يعانون من حصوات الكلى المتكررة",
+    warning_en: "Not recommended for those with recurrent kidney stones",
+    schedule_ar: "مرة يومياً (يذاب في كوب ماء)",
+    schedule_en: "Once daily (Dissolve in water)"
+  },
+  {
+    name_ar: "نيتروجليسرين",
+    name_en: "Nitroglycerin",
+    use_ar: "علاج الذبحة الصدرية وتوسيع شرايين القلب",
+    use_en: "Treats angina and dilates heart arteries",
+    warning_ar: "يؤخذ تحت اللسان عند الضرورة القصوى",
+    warning_en: "Taken under the tongue in emergencies",
+    schedule_ar: "عند اللزوم تحت اللسان",
+    schedule_en: "As needed under the tongue"
+  },
+  {
+    name_ar: "أوتوكالم (قطرة)",
+    name_en: "Otocalm",
+    use_ar: "تسكين آلام الأذن الوسطى والتهاباتها",
+    use_en: "Relieves middle ear pain and inflammation",
+    warning_ar: "لا تستخدم في حال وجود ثقب في طبلة الأذن",
+    warning_en: "Do not use if the eardrum is perforated",
+    schedule_ar: "حسب الحاجة (أو كما يصف الطبيب)",
+    schedule_en: "As needed (or as prescribed)"
+  },
+  {
+    name_ar: "بيتاديرم (كريم)",
+    name_en: "Betaderm",
+    use_ar: "علاج الالتهابات الجلدية الشديدة والحكة",
+    use_en: "Treats severe skin inflammation and itching",
+    warning_ar: "يحتوي على كورتيزون؛ لا يوضع على الوجه لفترات طويلة",
+    warning_en: "Contains steroids; avoid long-term use on the face",
+    schedule_ar: "مرتين يومياً (طبقة رقيقة)",
+    schedule_en: "Twice daily (thin layer)"
+  },
+  {
+    name_ar: "كالسيد (كالسيوم)",
+    name_en: "Calcide",
+    use_ar: "مكمل غذائي لتقوية العظام ومنع الهشاشة",
+    use_en: "Calcium supplement for bone health",
+    warning_ar: "قد يسبب الإمساك؛ اشرب كميات كافية من الماء",
+    warning_en: "May cause constipation; drink plenty of water",
+    schedule_ar: "مرة واحدة يومياً بعد الغداء",
+    schedule_en: "Once daily after lunch"
+  },
+  {
+    name_ar: "جلوكوزامين",
+    name_en: "Glucosamine",
+    use_ar: "دعم الغضاريف وعلاج خشونة الركبة والمفاصل",
+    use_en: "Supports cartilage and treats joint osteoarthritis",
+    warning_ar: "يحتاج للاستمرار عليه لفترة طويلة لظهور النتائج",
+    warning_en: "Requires long-term use to see results",
+    schedule_ar: "مرة واحدة يومياً (أو مقسمة)",
+    schedule_en: "Once daily (or divided)"
+  },
+  {
+    name_ar: "سياليس",
+    name_en: "Cialis",
+    use_ar: "علاج ضعف الانتصاب واضطرابات البروستاتا",
+    use_en: "Treats erectile dysfunction and prostate issues",
+    warning_ar: "يمنع تماماً لمرضى القلب الذين يتناولون أدوية النيترات",
+    warning_en: "Contraindicated with nitrate heart medications",
+    schedule_ar: "مرة واحدة يومياً أو عند اللزوم",
+    schedule_en: "Once daily or as needed"
+  },
+  {
+    name_ar: "بريمالوت نور",
+    name_en: "Primolut Nor",
+    use_ar: "تنظيم الدورة الشهرية وعلاج اضطرابات الهرمونات",
+    use_en: "Regulates periods and hormonal disorders",
+    warning_ar: "يجب استخدامه بإشراف طبي دقيق لتحديد الجرعة",
+    warning_en: "Must be used under strict medical supervision",
+    schedule_ar: "حسب تعليمات الطبيب بدقة",
+    schedule_en: "Strictly as prescribed"
+  },
+  {
+    name_ar: "ميكوجيل",
+    name_en: "Mucogel",
+    use_ar: "علاج الحموضة الشديدة وحرقان فم المعدة",
+    use_en: "Treats severe acidity and heartburn",
+    warning_ar: "يفضل تناوله قبل الوجبات بـ 15 دقيقة",
+    warning_en: "Best taken 15 minutes before meals",
+    schedule_ar: "قبل الأكل بـ 15 دقيقة أو بعده بساعتين",
+    schedule_en: "15 mins before or 2 hours after meals"
+  },
+  {
+    name_ar: "زينيكال (أورليستات)",
+    name_en: "Xenical (Orlistat)",
+    use_ar: "تقليل امتصاص الدهون للمساعدة في إنقاص الوزن",
+    use_en: "Reduces fat absorption for weight loss",
+    warning_ar: "قد يسبب اضطرابات معوية دهنية",
+    warning_en: "May cause oily intestinal discharge",
+    schedule_ar: "مع الوجبات التي تحتوي على دهون",
+    schedule_en: "With meals containing fat"
+  },
+  {
+    name_ar: "فيوسيدين (مرهم)",
+    name_en: "Fucidin",
+    use_ar: "مضاد حيوي موضعي لعلاج دمال الجلد والجروح",
+    use_en: "Topical antibiotic for skin boils and wounds",
+    warning_ar: "للاستخدام الظاهري فقط على المنطقة المصابة",
+    warning_en: "For external use only on the affected area",
+    schedule_ar: "دهان موضعي 2-3 مرات يومياً",
+    schedule_en: "Apply topically 2-3 times daily"
+  },
+  {
+    name_ar: "ليفوثيروكسين (إلتروكسين)",
+    name_en: "Levothyroxine",
+    use_ar: "علاج قصور الغدة الدرقية وتعويض نقص الهرمون",
+    use_en: "Treats hypothyroidism and hormone deficiency",
+    warning_ar: "يؤخذ على معدة فارغة تماماً قبل الإفطار بساعة",
+    warning_en: "Take on an empty stomach one hour before breakfast",
+    schedule_ar: "مرة يومياً صباحاً على معدة فارغة",
+    schedule_en: "Once daily morning on empty stomach"
+  },
+  {
+    name_ar: "توبرايدكس (قطرة)",
+    name_en: "Tobradex",
+    use_ar: "مضاد حيوي ومعقم للعين بعد العمليات أو الالتهابات الشديدة",
+    use_en: "Antibiotic and steroid for eye infections",
+    warning_ar: "لا تستخدم لفترة طويلة دون إشراف طبي لمنع ضغط العين",
+    warning_en: "Do not use for long periods without medical supervision",
+    schedule_ar: "حسب تعليمات الطبيب (غالباً 4 مرات)",
+    schedule_en: "As prescribed (Usually 4 times)"
+  },
+  {
+    name_ar: "سيكلوبنزابرين",
+    name_en: "Cyclobenzaprine",
+    use_ar: "باسط للعضلات لعلاج التشنجات العضلية المؤلمة",
+    use_en: "Muscle relaxant for painful muscle spasms",
+    warning_ar: "يسبب نعاساً شديداً؛ تجنب القيادة بعد تناوله",
+    warning_en: "Causes severe drowsiness; avoid driving",
+    schedule_ar: "مرة واحدة مساءً (أو مقسمة حسب الحاجة)",
+    schedule_en: "Once daily at evening (or divided)"
+  },
+  {
+    name_ar: "سبيرونولاكتون",
+    name_en: "Spironolactone",
+    use_ar: "مدر للبول وعلاج لارتفاع ضغط الدم وحب الشباب الهرموني",
+    use_en: "Diuretic, treats high blood pressure and hormonal acne",
+    warning_ar: "قد يرفع مستويات البوتاسيوم في الدم",
+    warning_en: "May increase potassium levels in the blood",
+    schedule_ar: "مرة واحدة يومياً صباحاً",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "كولشيسين",
+    name_en: "Colchicine",
+    use_ar: "علاج نوبات النقرس الحادة ومنع تكرارها",
+    use_en: "Treats acute gout attacks and prevents recurrence",
+    warning_ar: "يجب الالتزام بالجرعة الدقيقة لتجنب التسمم",
+    warning_en: "Strictly follow dose to avoid toxicity",
+    schedule_ar: "حسب تعليمات الطبيب (عند النوبة)",
+    schedule_en: "As prescribed (During attacks)"
+  },
+  {
+    name_ar: "جلوكوزامين وكولاجين",
+    name_en: "Glucosamine & Collagen",
+    use_ar: "دعم المفاصل وإعادة بناء الغضاريف المتآكلة",
+    use_en: "Supports joints and rebuilds worn cartilage",
+    warning_ar: "قد يحتاج لعدة أسابيع من الاستخدام المنتظم لظهور النتيجة",
+    warning_en: "May take several weeks of regular use to see results",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "ميتوكلوبراميد (بريمبران)",
+    name_en: "Metoclopramide",
+    use_ar: "علاج الغثيان والقيء المساعد في حركة المعدة",
+    use_en: "Treats nausea, vomiting, and aids gastric motility",
+    warning_ar: "قد يسبب حركات لا إرادية لدى الأطفال وكبار السن",
+    warning_en: "May cause involuntary movements in children/elderly",
+    schedule_ar: "قبل الأكل بـ 30 دقيقة",
+    schedule_en: "30 mins before meals"
+  },
+  {
+    name_ar: "روأكيوتان (إيزوتريتينوين)",
+    name_en: "Roaccutane",
+    use_ar: "علاج حالات حب الشباب الشديدة والمستعصية",
+    use_en: "Treats severe and resistant acne",
+    warning_ar: "يمنع تماماً للحوامل ويجب عمل فحوصات دورية للكبد",
+    warning_en: "Strictly forbidden for pregnant women; requires liver tests",
+    schedule_ar: "مع وجبة دسمة (لتحسين الامتصاص)",
+    schedule_en: "With a fatty meal (For absorption)"
+  },
+  {
+    name_ar: "إيريثرومايسين (محلول جلد)",
+    name_en: "Erythromycin Topical",
+    use_ar: "مضاد حيوي موضعي لعلاج حب الشباب البكتيري",
+    use_en: "Topical antibiotic for bacterial acne",
+    warning_ar: "قد يسبب جفافاً أو قشوراً بسيطة في الجلد",
+    warning_en: "May cause mild skin dryness or peeling",
+    schedule_ar: "دهان موضعي مرتين يومياً",
+    schedule_en: "Apply topically twice daily"
+  },
+  {
+    name_ar: "فنتولين (بخاخ)",
+    name_en: "Ventolin (Inhaler)",
+    use_ar: "توسيع الشعب الهوائية وعلاج أزمات الربو الضيق التنفسي",
+    use_en: "Expands airways and treats asthma attacks",
+    warning_ar: "قد يسبب رعشة خفيفة في اليدين أو تسارع في ضربات القلب",
+    warning_en: "May cause mild hand tremors or rapid heartbeat",
+    schedule_ar: "عند اللزوم (بخيتين عند الأزمة)",
+    schedule_en: "As needed (2 puffs during attack)"
+  },
+  {
+    name_ar: "بلميكورت (للاستنشاق)",
+    name_en: "Pulmicort",
+    use_ar: "مضاد للالتهاب لتقليل تورم الشعب الهوائية",
+    use_en: "Anti-inflammatory to reduce airway swelling",
+    warning_ar: "يجب مضمضة الفم بالماء بعد كل استخدام لتجنب الفطريات",
+    warning_en: "Must rinse mouth with water after use to avoid fungi",
+    schedule_ar: "مرتين يومياً (صباحاً ومساءً)",
+    schedule_en: "Twice daily (Morning and evening)"
+  },
+  {
+    name_ar: "ألفا كيموتربسين",
+    name_en: "Alpha Chymotrypsin",
+    use_ar: "حقن لعلاج التورم والالتهابات والارتشاح بعد الإصابات",
+    use_en: "Injection for swelling and inflammation after injury",
+    warning_ar: "يجب عمل اختبار حساسية قبل الحقن",
+    warning_en: "Allergy test required before injection",
+    schedule_ar: "حقن عضلية حسب وصفة الطبيب",
+    schedule_en: "IM injection as prescribed"
+  },
+  {
+    name_ar: "أوكيوماثيل (قطرة)",
+    name_en: "Ocumethyl",
+    use_ar: "علاج احمرار العين الناتج عن الحساسية والأتربة",
+    use_en: "Treats eye redness from allergies and dust",
+    warning_ar: "لا تستخدم مع العدسات اللاصقة؛ انتظر 15 دقيقة",
+    warning_en: "Do not use with contact lenses; wait 15 minutes",
+    schedule_ar: "عند اللزوم (2-3 مرات يومياً)",
+    schedule_en: "As needed (2-3 times daily)"
+  },
+  {
+    name_ar: "ديواكس (نقط أذن)",
+    name_en: "Dewax",
+    use_ar: "إذابة شمع الأذن المتراكم لتسهيل تنظيفها",
+    use_en: "Dissolves earwax for easier cleaning",
+    warning_ar: "تميل الرأس للجانب لمدة 5 دقائق بعد وضع النقط",
+    warning_en: "Tilt head to the side for 5 minutes after use",
+    schedule_ar: "مرة أو مرتين يومياً لعدة أيام",
+    schedule_en: "Once or twice daily for a few days"
+  },
+  {
+    name_ar: "جلوكوفاج XR",
+    name_en: "Glucophage XR",
+    use_ar: "منظم سكر طويل المفعول لمرضى السكري",
+    use_en: "Extended-release sugar regulator for diabetes",
+    warning_ar: "يتم بلع القرص كاملاً؛ لا تكسره أو تمضغه",
+    warning_en: "Swallow whole; do not crush or chew",
+    schedule_ar: "مرة واحدة يومياً مع وجبة العشاء",
+    schedule_en: "Once daily with dinner"
+  },
+  {
+    name_ar: "كيبوريكس (أقراص)",
+    name_en: "Ceporex Tablets",
+    use_ar: "مضاد حيوي لعلاج التهابات المسالك البولية والجلد",
+    use_en: "Antibiotic for urinary tract and skin infections",
+    warning_ar: "قد يسبب طفح جلدي في حال وجود حساسية بنسلين",
+    warning_en: "May cause rash if penicillin allergy exists",
+    schedule_ar: "كل 6 أو 12 ساعة بانتظام",
+    schedule_en: "Every 6 or 12 hours regularly"
+  },
+  {
+    name_ar: "سيرين (بخاخ أنف)",
+    name_en: "Saline (Nasal Spray)",
+    use_ar: "محلول ملحي لتنظيف الأنف من الأتربة والشوائب",
+    use_en: "Saline solution to clean nasal passages",
+    warning_ar: "آمن جداً للأطفال والرضع وللاستخدام اليومي",
+    warning_en: "Very safe for infants, children, and daily use",
+    schedule_ar: "عند اللزوم (عدة مرات يومياً)",
+    schedule_en: "As needed (Multiple times daily)"
+  },
+  {
+    name_ar: "إيريثرومايسين (أقراص)",
+    name_en: "Erythromycin Tablets",
+    use_ar: "مضاد حيوي بديل في حالات حساسية البنسلين",
+    use_en: "Antibiotic alternative for penicillin allergy",
+    warning_ar: "يفضل تناوله على معدة فارغة لزيادة الامتصاص",
+    warning_en: "Best taken on an empty stomach for absorption",
+    schedule_ar: "كل 6 أو 12 ساعة (قبل الأكل بساعة)",
+    schedule_en: "Every 6 or 12 hours (1 hour before food)"
+  },
+  {
+    name_ar: "نورماتين",
+    name_en: "Normaten",
+    use_ar: "علاج ارتفاع ضغط الدم والوقاية من السكتات",
+    use_en: "Treats hypertension and prevents strokes",
+    warning_ar: "يؤخذ في نفس الوقت يومياً بانتظام",
+    warning_en: "Take at the same time daily consistently",
+    schedule_ar: "مرة واحدة يومياً صباحاً",
+    schedule_en: "Once daily in the morning"
+  },
+  {
+    name_ar: "فولتارين (جل)",
+    name_en: "Voltarin Gel",
+    use_ar: "مسكن موضعي لآلام المفاصل والعضلات",
+    use_en: "Topical pain reliever for joints and muscles",
+    warning_ar: "لا يوضع على الجروح المفتوحة",
+    warning_en: "Do not apply to open wounds",
+    schedule_ar: "دهان موضعي 3-4 مرات يومياً",
+    schedule_en: "Apply topically 3-4 times daily"
+  },
+  {
+    name_ar: "تلفاست",
+    name_en: "Telfast",
+    use_ar: "مضاد للحساسية ولا يسبب النعاس",
+    use_en: "Non-drowsy antihistamine",
+    warning_ar: "تجنب تناول عصير الفاكهة معه",
+    warning_en: "Avoid taking with fruit juices",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+}, 
+  {
+    name_ar: "أموكسيسيلين",
+    name_en: "Amoxicillin",
+    use_ar: "مضاد حيوي للعدوى البكتيرية (الصدر، الأسنان، الأذن)",
+    use_en: "Antibiotic for bacterial infections (Chest, dental, ear)",
+    warning_ar: "يجب إكمال الكورس العلاجي بالكامل حتى لو شعرت بتحسن",
+    warning_en: "Complete the full course even if you feel better",
+    schedule_ar: "كل 8 ساعات بانتظام (3 مرات يومياً)",
+    schedule_en: "Every 8 hours regularly (3 times daily)"
+  },
+  {
+    name_ar: "أزيثرومايسين (زيثروماكس)",
+    name_en: "Azithromycin",
+    use_ar: "مضاد حيوي للعدوى التنفسية والجلدية",
+    use_en: "Antibiotic for respiratory and skin infections",
+    warning_ar: "يفضل تناوله على معدة فارغة لامتصاص أفضل",
+    warning_en: "Best taken on an empty stomach for better absorption",
+    schedule_ar: "مرة واحدة يومياً (قبل الأكل بساعة أو بعده بساعتين)",
+    schedule_en: "Once daily (1 hour  or 2 hours after food)"
+  },
+  {
+    name_ar: "أسيكلوفير (زوفيراكس)",
+    name_en: "Acyclovir",
+    use_ar: "مضاد فيروسات لعلاج الهربس والجديري المائي",
+    use_en: "Antiviral for herpes and chickenpox",
+    warning_ar: "اشرب كميات كبيرة من الماء لحماية الكلى",
+    warning_en: "Drink plenty of water to protect kidneys",
+    schedule_ar: "5 مرات يومياً (كل 4 ساعات تقريباً)",
+    schedule_en: "5 times daily (approx every 4 hours)"
+  },
+  {
+    name_ar: "رويال جيلي",
+    name_en: "Royal Jelly",
+    use_ar: "مكمل غذائي لزيادة النشاط والطاقة والمناعة",
+    use_en: "Dietary supplement for energy, vitality and immunity",
+    warning_ar: "يمنع لمن لديهم حساسية من منتجات النحل أو الربو",
+    warning_en: "Contraindicated for those with bee product allergies or asthma",
+    schedule_ar: "مرة واحدة يومياً صباحاً قبل الإفطار",
+    schedule_en: "Once daily in the morning before breakfast"
+  },
+  {
+    name_ar: "سنترم",
+    name_en: "Centrum",
+    use_ar: "فيتامينات متعددة لدعم الصحة العامة والمناعة",
+    use_en: "Multivitamins for general health support",
+    warning_ar: "يفضل تناوله مع الوجبة الرئيسية لامتصاص أفضل",
+    warning_en: "Best taken with the main meal for better absorption",
+    schedule_ar: "مرة واحدة يومياً بعد وجبة الغداء أو الإفطار",
+    schedule_en: "Once daily after lunch or breakfast"
+  },
+  {
+    name_ar: "كالسيوم + فيتامين د",
+    name_en: "Calcium + Vitamin D",
+    use_ar: "لتقوية العظام والأسنان ومنع الهشاشة",
+    use_en: "To strengthen bones, teeth, and prevent osteoporosis",
+    warning_ar: "يجب الحذر لمرضى حصوات الكلى؛ اشرب ماء بكثرة",
+    warning_en: "Caution for kidney stone patients; drink water",
+    schedule_ar: "مرة أو مرتين يومياً بعد الأكل",
+    schedule_en: "Once or twice daily after meals"
+  },
+  {
+    name_ar: "كيناكومب",
+    name_en: "Kenacomb",
+    use_ar: "كريم للالتهابات الجلدية والتسلخات (مضاد فطري وبكتيري)",
+    use_en: "Cream for skin inflammation and rashes (Antifungal/Antibacterial)",
+    warning_ar: "يحتوي على كورتيزون، لا يستخدم لفترات طويلة أو مساحات واسعة",
+    warning_en: "Contains cortisone, do not use for long periods or large areas",
+    schedule_ar: "دهان موضعي مرتين يومياً (صباحاً ومساءً)",
+    schedule_en: "Apply topically twice daily (Morning and evening)"
+  },
+  {
+    name_ar: "برينيل / بريزولين",
+    name_en: "Prisoline",
+    use_ar: "قطرة لإزالة احمرار وحساسية العين",
+    use_en: "Eye drops for redness and allergy relief",
+    warning_ar: "لا تستخدم مع العدسات اللاصقة ولا لأكثر من 5 أيام",
+    warning_en: "Do not use with contact lenses or for more than 5 days",
+    schedule_ar: "قطرة أو قطرتين 3-4 مرات يومياً عند اللزوم",
+    schedule_en: "1-2 drops 3-4 times daily when needed"
+  },
+  {
+    name_ar: "أمينوفيلين",
+    name_en: "Aminophylline",
+    use_ar: "يفتح الشعب الهوائية لعلاج الربو وضيق التنفس",
+    use_en: "Bronchodilator for asthma and shortness of breath",
+    warning_ar: "الجرعة دقيقة جداً؛ لا تغيرها دون استشارة الطبيب",
+    warning_en: "Dose is critical; do not change without consulting doctor",
+    schedule_ar: "حسب تعليمات الطبيب بصرامة",
+    schedule_en: "Strictly as prescribed by the doctor"
+  },
+  {
+    name_ar: "باراسيتامول (عادي)",
+    name_en: "Paracetamol",
+    use_ar: "مسكن للآلام خفيف وخافض للحرارة",
+    use_en: "Mild pain reliever and fever reducer",
+    warning_ar: "آمن عموماً لكن لا تتجاوز 4 جرام (8 أقراص) يومياً",
+    warning_en: "Generally safe but do not exceed 4g (8 tabs) daily",
+    schedule_ar: "عند اللزوم (كل 6-8 ساعات)",
+    schedule_en: "When needed (Every 6-8 hours)"
+  },
+  {
+    name_ar: "ايبوبروفين",
+    name_en: "Ibuprofen",
+    use_ar: "مسكن للآلام ومضاد للالتهاب وخافض للحرارة",
+    use_en: "Pain reliever, anti-inflammatory, and fever reducer",
+    warning_ar: "لا ينصح به لمرضى قرحة المعدة أو الربو",
+    warning_en: "Not recommended for stomach ulcer or asthma patients",
+    schedule_ar: "بعد الأكل 3 مرات يومياً عند الحاجة",
+    schedule_en: "After meals 3 times daily when needed"
+  }, 
+  {
+    name_ar: "جافيسكون",
+    name_en: "Gaviscon",
+    use_ar: "لعلاج حموضة المعدة وحرقان المريء",
+    use_en: "For heartburn and acid reflux",
+    warning_ar: "يفضل استخدامه بعد الأكل؛ استشر الطبيب إذا كنت تتبع حمية قليلة الصوديوم",
+    warning_en: "Best taken after meals; consult doctor if on a low-sodium diet",
+    schedule_ar: "10-20 مل (معلقتين) بعد الوجبات وعند النوم",
+    schedule_en: "10-20ml after meals and at bedtime"
+  },
+  {
+    name_ar: "موتيليوم",
+    name_en: "Motilium",
+    use_ar: "لعلاج الغثيان، القيء واضطرابات حركة المعدة",
+    use_en: "For nausea, vomiting, and gastric motility disorders",
+    warning_ar: "لا يستخدم لمرضى القلب أو من لديهم اضطراب في ضربات القلب",
+    warning_en: "Do not use for heart patients or those with heart rhythm disorders",
+    schedule_ar: "قرص واحد قبل الأكل بـ 15-30 دقيقة (3 مرات يومياً)",
+    schedule_en: "One tablet 15-30 minutes before food (3 times daily)"
+  },
+  {
+    name_ar: "فولتارين (أقراص)",
+    name_en: "Voltaren",
+    use_ar: "مسكن قوي لآلام العظام، المفاصل والتهابات الجسم",
+    use_en: "Strong pain reliever for bone, joint pain, and inflammation",
+    warning_ar: "يمنع لمرضى القرحة، الربو، أو مشاكل الكلى الحادة",
+    warning_en: "Avoid for patients with ulcers, asthma, or severe kidney issues",
+    schedule_ar: "قرص واحد بعد الأكل مرتين يومياً",
+    schedule_en: "One tablet twice daily after food"
+  },
+  {
+    name_ar: "ستريبسلز",
+    name_en: "Strepsils",
+    use_ar: "أقراص استحلاب لتخفيف آلام التهاب الحلق",
+    use_en: "Lozenges to soothe sore throat pain",
+    warning_ar: "لا يعطى للأطفال دون سن 6 سنوات",
+    warning_en: "Do not give to children under 6 years old",
+    schedule_ar: "قرص استحلاب كل 3 ساعات عند اللزوم",
+    schedule_en: "One lozenge every 3 hours as needed"
+  },
+  {
+    name_ar: "كونكور",
+    name_en: "Concor",
+    use_ar: "لعلاج ارتفاع ضغط الدم وتنظيم ضربات القلب",
+    use_en: "For high blood pressure and heart rate regulation",
+    warning_ar: "لا تتوقف عن تناوله فجأة دون استشارة الطبيب",
+    warning_en: "Do not stop taking it suddenly without consulting a doctor",
+    schedule_ar: "قرص واحد يومياً في نفس الموعد (صباحاً عادة)",
+    schedule_en: "One tablet daily at the same time (usually morning)"
+  },
+  {
+    name_ar: "توسكان",
+    name_en: "Tusskan",
+    use_ar: "شراب طارد للبلغم ومهدئ للسعال",
+    use_en: "Expectorant and cough suppressant syrup",
+    warning_ar: "قد يسبب النعاس؛ تجنب القيادة بعد تناوله",
+    warning_en: "May cause drowsiness; avoid driving after taking it",
+    schedule_ar: "ملعقة كبيرة (10 مل) 3 مرات يومياً",
+    schedule_en: "One tablespoon (10ml) 3 times daily"
+  }, 
+  {
+    name_ar: "مالوكس",
+    name_en: "Maalox",
+    use_ar: "لعلاج حموضة المعدة وعسر الهضم",
+    use_en: "For heartburn and indigestion",
+    warning_ar: "يفضل استخدامه بعد الأكل بـ 20 دقيقة أو عند اللزوم",
+    warning_en: "Preferably taken 20 minutes after meals or as needed",
+    schedule_ar: "ملعقة كبيرة 3 مرات يومياً بعد الوجبات",
+    schedule_en: "One tablespoon 3 times daily after meals"
+  },
+  {
+    name_ar: "نيوروفيت",
+    name_en: "Neurovit",
+    use_ar: "فيتامين ب مركب لعلاج التهاب الأعصاب وتقويتها",
+    use_en: "Vitamin B complex for nerve inflammation and strengthening",
+    warning_ar: "قد يغير لون البول إلى الأصفر الداكن (أمر طبيعي جداً)",
+    warning_en: "May change urine color to dark yellow (completely normal)",
+    schedule_ar: "قرص واحد يومياً بعد الغداء",
+    schedule_en: "One tablet daily after lunch"
+  },
+  {
+    name_ar: "إيموديوم",
+    name_en: "Imodium",
+    use_ar: "لعلاج حالات الإسهال الحادة",
+    use_en: "For treatment of acute diarrhea",
+    warning_ar: "لا يستخدم إذا كان الإسهال مصحوباً بدم أو حرارة عالية",
+    warning_en: "Do not use if diarrhea is accompanied by blood or high fever",
+    schedule_ar: "كبسولتان فوراً، ثم كبسولة بعد كل إسهال (بحد أقصى 6 يومياً)",
+    schedule_en: "Two capsules initially, then one after each loose stool (Max 6 daily)"
+  },
+  {
+    name_ar: "زيثروماكس",
+    name_en: "Zithromax",
+    use_ar: "مضاد حيوي قوي لالتهابات الجهاز التنفسي واللوزتين",
+    use_en: "Antibiotic for respiratory tract and tonsils infections",
+    warning_ar: "يؤخذ على معدة فارغة (ساعة قبل الأكل أو ساعتين بعده)",
+    warning_en: "Take on an empty stomach (1 hour before or 2 hours after food)",
+    schedule_ar: "قرص واحد يومياً لمدة 3 أيام فقط",
+    schedule_en: "One tablet daily for 3 days only"
+  },
+  {
+    name_ar: "سيليبريكس",
+    name_en: "Celebrex",
+    use_ar: "مسكن لآلام العظام والمفاصل والتهابات الروماتيزم",
+    use_en: "Pain reliever for bone, joint pain and rheumatoid arthritis",
+    warning_ar: "يستخدم بحذر لمرضى القلب والضغط",
+    warning_en: "Use with caution for heart and blood pressure patients",
+    schedule_ar: "قرص واحد مرتين يومياً بعد الأكل",
+    schedule_en: "One tablet twice daily after food"
+  },
+  {
+    name_ar: "ستوب سبازم",
+    name_en: "Stop-Spasm",
+    use_ar: "لعلاج مغص وتقلصات الجهاز الهضمي والمسالك البولية",
+    use_en: "For gastrointestinal and urinary tract cramps",
+    warning_ar: "قد يسبب جفاف في الفم أو ميل للنعاس",
+    warning_en: "May cause dry mouth or drowsiness",
+    schedule_ar: "قرص واحد عند اللزوم (3 مرات يومياً بحد أقصى)",
+    schedule_en: "One tablet as needed (Max 3 times daily)"
+  }, 
+  {
+    name_ar: "نورفاسك",
+    name_en: "Norvasc",
+    use_ar: "لعلاج ارتفاع ضغط الدم وذبحة الصدر",
+    use_en: "For high blood pressure and angina",
+    warning_ar: "قد يسبب تورم في القدمين أو الكاحل لدى بعض المرضى",
+    warning_en: "May cause swelling of the feet or ankles in some patients",
+    schedule_ar: "قرص واحد يومياً في نفس الموعد",
+    schedule_en: "One tablet daily at the same time"
+  },
+  {
+    name_ar: "كريستور",
+    name_en: "Crestor",
+    use_ar: "لخفض نسبة الكوليسترول الضار والدهون الثلاثية",
+    use_en: "To lower bad cholesterol and triglycerides",
+    warning_ar: "يمنع استخدامه للحوامل أو المصابين بأمراض الكبد النشطة",
+    warning_en: "Contraindicated in pregnancy or active liver disease",
+    schedule_ar: "قرص واحد يومياً قبل النوم",
+    schedule_en: "One tablet daily before bedtime"
+  },
+  {
+    name_ar: "فنادريل",
+    name_en: "Fenadril",
+    use_ar: "مضاد للحساسية والتهاب الأنف والجيوب الأنفية",
+    use_en: "Antihistamine for allergy and sinusitis",
+    warning_ar: "قد يسبب جفافاً في الحلق أو الأنف",
+    warning_en: "May cause dryness in the throat or nose",
+    schedule_ar: "قرص واحد يومياً (يفضل في المساء)",
+    schedule_en: "One tablet daily (preferably in the evening)"
+  },
+  {
+    name_ar: "ألفنتيرن",
+    name_en: "Alphintern",
+    use_ar: "مضاد للالتهابات والتورم الناتج عن الكدمات أو العمليات",
+    use_en: "Anti-inflammatory and anti-edema for bruises or surgeries",
+    warning_ar: "يجب تناوله على معدة فارغة (قبل الأكل بساعة) لضمان الفعالية",
+    warning_en: "Must be taken on an empty stomach (1 hour before meals)",
+    schedule_ar: "قرص واحد 3 مرات يومياً قبل الأكل بساعة",
+    schedule_en: "One tablet 3 times daily one hour before meals"
+  },
+  {
+    name_ar: "فيلوسيف",
+    name_en: "Velosef",
+    use_ar: "مضاد حيوي لعلاج التهابات الجهاز التنفسي والمسالك البولية",
+    use_en: "Antibiotic for respiratory and urinary tract infections",
+    warning_ar: "تأكد من عدم وجود حساسية تجاه البنسلين",
+    warning_en: "Ensure there is no allergy to penicillin",
+    schedule_ar: "كل 12 ساعة بعد الأكل",
+    schedule_en: "Every 12 hours after meals"
+  }, 
+{
+  name_ar: "ليفوفلوكساسين",
+  name_en: "Levofloxacin",
+  use_ar: "مضاد حيوي واسع المجال",
+  use_en: "Broad spectrum antibiotic",
+  warning_ar: "تجنب التعرض للشمس",
+  warning_en: "Avoid sun exposure",
+  schedule_ar: "مرة واحدة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "أنسولين",
+  name_en: "Insulin",
+  use_ar: "خفض سكر الدم",
+  use_en: "Lowers blood sugar",
+  warning_ar: "يؤخذ تحت إشراف طبي",
+  warning_en: "Use under medical supervision",
+  schedule_ar: "حسب الجرعة المقررة",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "فيتامين B12",
+  name_en: "Vitamin B12",
+  use_ar: "تقوية الأعصاب وعلاج الأنيميا",
+  use_en: "Nerve support and anemia",
+  warning_ar: "لا يفرط في الجرعة",
+  warning_en: "Do not overdose",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "فيتامين C",
+  name_en: "Vitamin C",
+  use_ar: "تقوية المناعة",
+  use_en: "Boosts immunity",
+  warning_ar: "قد يسبب حموضة",
+  warning_en: "May cause acidity",
+  schedule_ar: "مرة يومياً بعد الأكل",
+  schedule_en: "Once daily after meals"
+},
+{
+  name_ar: "بوسكوبان",
+  name_en: "Buscopan",
+  use_ar: "مغص وتقلصات البطن",
+  use_en: "Abdominal cramps",
+  warning_ar: "قد يسبب جفاف الفم",
+  warning_en: "May cause dry mouth",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "كيتولاك",
+  name_en: "Ketolac",
+  use_ar: "مسكن ألم قوي",
+  use_en: "Strong pain reliever",
+  warning_ar: "لا يستخدم لفترة طويلة",
+  warning_en: "Not for long use",
+  schedule_ar: "كل 8 ساعات",
+  schedule_en: "Every 8 hours"
+},
+{
+  name_ar: "بيتادين",
+  name_en: "Betadine",
+  use_ar: "مطهر للجروح",
+  use_en: "Wound antiseptic",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "عند الحاجة",
+  schedule_en: "When needed"
+},
+{
+  name_ar: "فيوسيدين",
+  name_en: "Fucidin",
+  use_ar: "مضاد حيوي موضعي",
+  use_en: "Topical antibiotic",
+  warning_ar: "لا يستخدم أكثر من أسبوع",
+  warning_en: "Do not exceed 7 days",
+  schedule_ar: "دهان مرتين يومياً",
+  schedule_en: "Apply twice daily"
+},
+{
+  name_ar: "نيوروبين",
+  name_en: "Neurobion",
+  use_ar: "فيتامينات للأعصاب",
+  use_en: "Nerve vitamins",
+  warning_ar: "آمن غالباً",
+  warning_en: "Generally safe",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "فلاجيل شراب",
+  name_en: "Flagyl Syrup",
+  use_ar: "مطهر معوي للأطفال",
+  use_en: "Intestinal antiseptic for kids",
+  warning_ar: "يؤخذ بعد الأكل",
+  warning_en: "Take after meals",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "بروفين شراب",
+  name_en: "Brufen Syrup",
+  use_ar: "خافض حرارة للأطفال",
+  use_en: "Fever reducer for children",
+  warning_ar: "يؤخذ بعد الأكل",
+  warning_en: "Take after food",
+  schedule_ar: "كل 8 ساعات",
+  schedule_en: "Every 8 hours"
+},
+{
+  name_ar: "بانادول أطفال",
+  name_en: "Panadol Kids",
+  use_ar: "مسكن وخافض حرارة للأطفال",
+  use_en: "Pain & fever reducer for kids",
+  warning_ar: "لا تتجاوز الجرعة",
+  warning_en: "Do not exceed dose",
+  schedule_ar: "كل 6 ساعات",
+  schedule_en: "Every 6 hours"
+},
+{
+  name_ar: "دوفاستون",
+  name_en: "Duphaston",
+  use_ar: "تنظيم الهرمونات والحمل",
+  use_en: "Hormonal regulation",
+  warning_ar: "يؤخذ بوصفة طبيب",
+  warning_en: "Prescription only",
+  schedule_ar: "حسب وصف الطبيب",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "سيلدينافيل",
+  name_en: "Sildenafil",
+  use_ar: "علاج ضعف الانتصاب",
+  use_en: "Erectile dysfunction treatment",
+  warning_ar: "لا يؤخذ مع أدوية القلب",
+  warning_en: "Do not use with heart meds",
+  schedule_ar: "قبل العلاقة بساعة",
+  schedule_en: "1 hour before intercourse"
+},
+{
+  name_ar: "توراميد",
+  name_en: "Torsemide",
+  use_ar: "مدر للبول",
+  use_en: "Diuretic",
+  warning_ar: "راقب الأملاح",
+  warning_en: "Monitor electrolytes",
+  schedule_ar: "مرة صباحاً",
+  schedule_en: "Once in morning"
+},
+{
+  name_ar: "ريلاكسون",
+  name_en: "Relaxon",
+  use_ar: "مرخي عضلات",
+  use_en: "Muscle relaxant",
+  warning_ar: "يسبب نعاس",
+  warning_en: "Causes drowsiness",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أزيلاستين",
+  name_en: "Azelastine",
+  use_ar: "حساسية الأنف",
+  use_en: "Nasal allergy",
+  warning_ar: "قد يسبب نعاس",
+  warning_en: "May cause drowsiness",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أوميجازينك",
+  name_en: "Omega Zinc",
+  use_ar: "تقوية المناعة",
+  use_en: "Immune booster",
+  warning_ar: "لا يفرط في الجرعة",
+  warning_en: "Do not overdose",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "إيبوبروفين جل",
+  name_en: "Ibuprofen Gel",
+  use_ar: "آلام العضلات موضعياً",
+  use_en: "Topical muscle pain relief",
+  warning_ar: "لا يوضع على جروح",
+  warning_en: "Do not apply on wounds",
+  schedule_ar: "دهان مرتين يومياً",
+  schedule_en: "Apply twice daily"
+},
+{
+  name_ar: "كولد فري",
+  name_en: "Cold Free",
+  use_ar: "علاج أعراض البرد",
+  use_en: "Cold symptoms relief",
+  warning_ar: "قد يسبب نعاس",
+  warning_en: "May cause drowsiness",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+}, 
+{
+  name_ar: "أزيثروميسين",
+  name_en: "Azithromycin",
+  use_ar: "مضاد حيوي لالتهابات الصدر",
+  use_en: "Chest infections antibiotic",
+  warning_ar: "قد يسبب اضطراب معدة",
+  warning_en: "May cause stomach upset",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "دوكسيسيكلين",
+  name_en: "Doxycycline",
+  use_ar: "مضاد حيوي لحب الشباب",
+  use_en: "Acne antibiotic",
+  warning_ar: "تجنب الشمس",
+  warning_en: "Avoid sunlight",
+  schedule_ar: "مرة أو مرتين يومياً",
+  schedule_en: "Once or twice daily"
+},
+{
+  name_ar: "أموكسيسيللين",
+  name_en: "Amoxicillin",
+  use_ar: "مضاد حيوي عام",
+  use_en: "General antibiotic",
+  warning_ar: "يؤخذ بعد الأكل",
+  warning_en: "Take after food",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "سيفترياكسون",
+  name_en: "Ceftriaxone",
+  use_ar: "مضاد حيوي حقن",
+  use_en: "Injectable antibiotic",
+  warning_ar: "يستخدم تحت إشراف طبي",
+  warning_en: "Medical supervision",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "ديكلوفيناك",
+  name_en: "Diclofenac",
+  use_ar: "مسكن ومضاد التهاب",
+  use_en: "Pain and inflammation",
+  warning_ar: "قد يضر المعدة",
+  warning_en: "May harm stomach",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "ترامادول",
+  name_en: "Tramadol",
+  use_ar: "مسكن ألم شديد",
+  use_en: "Severe pain reliever",
+  warning_ar: "يسبب إدمان",
+  warning_en: "May cause dependence",
+  schedule_ar: "حسب وصف الطبيب",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "لورازيبام",
+  name_en: "Lorazepam",
+  use_ar: "مهدئ للقلق",
+  use_en: "Anti-anxiety",
+  warning_ar: "يسبب نعاس",
+  warning_en: "Causes drowsiness",
+  schedule_ar: "حسب الوصفة",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "هيدروكلوروثيازيد",
+  name_en: "Hydrochlorothiazide",
+  use_ar: "مدر بول للضغط",
+  use_en: "Diuretic for hypertension",
+  warning_ar: "يراقب البوتاسيوم",
+  warning_en: "Monitor potassium",
+  schedule_ar: "مرة صباحاً",
+  schedule_en: "Once in morning"
+},
+{
+  name_ar: "بروبرانولول",
+  name_en: "Propranolol",
+  use_ar: "علاج ضربات القلب والقلق",
+  use_en: "Heart rate and anxiety",
+  warning_ar: "لا يوقف فجأة",
+  warning_en: "Do not stop suddenly",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "لوسارتان",
+  name_en: "Losartan",
+  use_ar: "علاج ضغط الدم",
+  use_en: "Hypertension",
+  warning_ar: "يراقب الضغط",
+  warning_en: "Monitor blood pressure",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "روزوفاستاتين",
+  name_en: "Rosuvastatin",
+  use_ar: "خفض الكوليسترول",
+  use_en: "Cholesterol lowering",
+  warning_ar: "تحليل وظائف كبد",
+  warning_en: "Check liver function",
+  schedule_ar: "مرة مساءً",
+  schedule_en: "Once at night"
+},
+{
+  name_ar: "إيزيتيميب",
+  name_en: "Ezetimibe",
+  use_ar: "خفض امتصاص الدهون",
+  use_en: "Reduces fat absorption",
+  warning_ar: "قد يسبب إسهال",
+  warning_en: "May cause diarrhea",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "فوروسيميد",
+  name_en: "Furosemide",
+  use_ar: "مدر بول قوي",
+  use_en: "Strong diuretic",
+  warning_ar: "يراقب الأملاح",
+  warning_en: "Monitor electrolytes",
+  schedule_ar: "مرة صباحاً",
+  schedule_en: "Once in morning"
+},
+{
+  name_ar: "سبيرونولاكتون",
+  name_en: "Spironolactone",
+  use_ar: "مدر بول وحب الشباب الهرموني",
+  use_en: "Diuretic and hormonal acne",
+  warning_ar: "يراقب البوتاسيوم",
+  warning_en: "Monitor potassium",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "ليفوثيروكسين",
+  name_en: "Levothyroxine",
+  use_ar: "علاج كسل الغدة الدرقية",
+  use_en: "Hypothyroidism",
+  warning_ar: "يؤخذ على معدة فارغة",
+  warning_en: "Take on empty stomach",
+  schedule_ar: "مرة صباحاً",
+  schedule_en: "Once in morning"
+},
+{
+  name_ar: "كاربامازيبين",
+  name_en: "Carbamazepine",
+  use_ar: "علاج الصرع",
+  use_en: "Epilepsy treatment",
+  warning_ar: "تحليل دم دوري",
+  warning_en: "Regular blood tests",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "فالبروات الصوديوم",
+  name_en: "Sodium Valproate",
+  use_ar: "علاج الصرع",
+  use_en: "Epilepsy",
+  warning_ar: "يمنع في الحمل",
+  warning_en: "Avoid in pregnancy",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أوندانسيترون",
+  name_en: "Ondansetron",
+  use_ar: "علاج القيء والغثيان",
+  use_en: "Anti-vomiting",
+  warning_ar: "قد يسبب صداع",
+  warning_en: "May cause headache",
+  schedule_ar: "عند اللزوم",
+  schedule_en: "As needed"
+},
+{
+  name_ar: "ميتوكلوبراميد",
+  name_en: "Metoclopramide",
+  use_ar: "منع القيء وتحريك المعدة",
+  use_en: "Anti-emetic and motility",
+  warning_ar: "لا يطيل الاستخدام",
+  warning_en: "Do not use long term",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "رانولازين",
+  name_en: "Ranolazine",
+  use_ar: "علاج الذبحة الصدرية",
+  use_en: "Angina treatment",
+  warning_ar: "يراقب رسم القلب",
+  warning_en: "Monitor ECG",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+}, 
+{
+  name_ar: "تيجاسيكلين",
+  name_en: "Tigecycline",
+  use_ar: "مضاد حيوي للحالات الشديدة",
+  use_en: "Severe infections antibiotic",
+  warning_ar: "يستخدم بالمستشفى فقط",
+  warning_en: "Hospital use only",
+  schedule_ar: "حسب وصف الطبيب",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "ريفابيوتين",
+  name_en: "Rifabutin",
+  use_ar: "علاج الدرن",
+  use_en: "Tuberculosis treatment",
+  warning_ar: "قد يغير لون البول",
+  warning_en: "May discolor urine",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "لينيزوليد",
+  name_en: "Linezolid",
+  use_ar: "مضاد حيوي للعدوى المقاومة",
+  use_en: "Resistant infections antibiotic",
+  warning_ar: "يراقب الدم",
+  warning_en: "Monitor blood count",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "دابتومايسين",
+  name_en: "Daptomycin",
+  use_ar: "مضاد حيوي قوي",
+  use_en: "Powerful antibiotic",
+  warning_ar: "تحليل عضلات",
+  warning_en: "Check muscle enzymes",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "كولستين",
+  name_en: "Colistin",
+  use_ar: "عدوى بكتيرية شديدة",
+  use_en: "Severe bacterial infection",
+  warning_ar: "قد يؤثر على الكلى",
+  warning_en: "May affect kidneys",
+  schedule_ar: "حسب الجرعة",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "كاسبوفنجين",
+  name_en: "Caspofungin",
+  use_ar: "مضاد فطريات",
+  use_en: "Antifungal",
+  warning_ar: "يؤخذ في المستشفى",
+  warning_en: "Hospital use",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "فوريكونازول",
+  name_en: "Voriconazole",
+  use_ar: "عدوى فطرية شديدة",
+  use_en: "Severe fungal infections",
+  warning_ar: "قد يسبب تشوش رؤية",
+  warning_en: "May cause blurred vision",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "بوساكونازول",
+  name_en: "Posaconazole",
+  use_ar: "وقاية من الفطريات",
+  use_en: "Fungal prophylaxis",
+  warning_ar: "يؤخذ بعد الأكل",
+  warning_en: "Take after meals",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "أمفوتيريسين ب",
+  name_en: "Amphotericin B",
+  use_ar: "فطريات خطيرة",
+  use_en: "Serious fungal infections",
+  warning_ar: "يؤثر على الكلى",
+  warning_en: "Affects kidneys",
+  schedule_ar: "حسب الحالة",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "ريفامبيسين",
+  name_en: "Rifampicin",
+  use_ar: "علاج الدرن",
+  use_en: "Tuberculosis",
+  warning_ar: "يغير لون البول",
+  warning_en: "Discolors urine",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "إيتراكونازول",
+  name_en: "Itraconazole",
+  use_ar: "علاج الفطريات",
+  use_en: "Fungal infections",
+  warning_ar: "يؤخذ بعد الأكل",
+  warning_en: "Take after meals",
+  schedule_ar: "مرة أو مرتين يومياً",
+  schedule_en: "Once or twice daily"
+},
+{
+  name_ar: "تيكوبلانين",
+  name_en: "Teicoplanin",
+  use_ar: "مضاد حيوي للجروح الملوثة",
+  use_en: "Wound infections",
+  warning_ar: "يستخدم بالمستشفى",
+  warning_en: "Hospital use",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "إيرتابينيم",
+  name_en: "Ertapenem",
+  use_ar: "عدوى بكتيرية شديدة",
+  use_en: "Severe bacterial infection",
+  warning_ar: "حقن فقط",
+  warning_en: "Injection only",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "ميروبينيم",
+  name_en: "Meropenem",
+  use_ar: "مضاد حيوي واسع",
+  use_en: "Broad antibiotic",
+  warning_ar: "في المستشفى",
+  warning_en: "Hospital use",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "إيميبينيم",
+  name_en: "Imipenem",
+  use_ar: "التهابات خطيرة",
+  use_en: "Serious infections",
+  warning_ar: "قد يسبب تشنجات",
+  warning_en: "May cause seizures",
+  schedule_ar: "4 مرات يومياً",
+  schedule_en: "4 times daily"
+},
+{
+  name_ar: "فوسفومايسين",
+  name_en: "Fosfomycin",
+  use_ar: "التهابات المسالك البولية",
+  use_en: "UTI infections",
+  warning_ar: "جرعة واحدة غالباً",
+  warning_en: "Usually single dose",
+  schedule_ar: "جرعة واحدة",
+  schedule_en: "Single dose"
+},
+{
+  name_ar: "ناتاميسين",
+  name_en: "Natamycin",
+  use_ar: "فطريات العين",
+  use_en: "Eye fungal infections",
+  warning_ar: "قطرة عين فقط",
+  warning_en: "Eye drops only",
+  schedule_ar: "عدة مرات يومياً",
+  schedule_en: "Several times daily"
+},
+{
+  name_ar: "أسيكلوفير وريدي",
+  name_en: "Acyclovir IV",
+  use_ar: "فيروسات شديدة",
+  use_en: "Severe viral infections",
+  warning_ar: "يشرب ماء كثير",
+  warning_en: "Drink plenty of water",
+  schedule_ar: "حسب الجرعة",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "جانسيكلوفير",
+  name_en: "Ganciclovir",
+  use_ar: "فيروسات خطيرة",
+  use_en: "Serious viral infections",
+  warning_ar: "يراقب الدم",
+  warning_en: "Monitor blood",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "فوسكارنيت",
+  name_en: "Foscarnet",
+  use_ar: "فيروسات مقاومة",
+  use_en: "Resistant viral infections",
+  warning_ar: "قد يؤثر على الكلى",
+  warning_en: "May affect kidneys",
+  schedule_ar: "حسب الحالة",
+  schedule_en: "As prescribed"
+}, 
+  {
+    name_ar: "بانثينول",
+    name_en: "Panthenol",
+    use_ar: "مرطب للجلد، تشققات الحلمة، والحروق البسيطة",
+    use_en: "Moisturizer for skin, nipple cracks, and mild burns",
+    warning_ar: "للاستخدام الخارجي فقط",
+    warning_en: "For external use only",
+    schedule_ar: "دهان موضعي عند اللزوم",
+    schedule_en: "Apply topically as needed"
+  },
+  {
+    name_ar: "بيبانثين",
+    name_en: "Bepanthen",
+    use_ar: "للتسلخات، طفح الحفاض، وترطيب الجلد",
+    use_en: "For diaper rash and skin hydration",
+    warning_ar: "آمن للرضع والأطفال",
+    warning_en: "Safe for infants and children",
+    schedule_ar: "مع كل تغيير حفاض أو عند اللزوم",
+    schedule_en: "With diaper change or as needed"
+  },
+  {
+    name_ar: "فيوسيكورت",
+    name_en: "Fusicort",
+    use_ar: "مضاد حيوي وكورتيزون للالتهابات الجلدية",
+    use_en: "Antibiotic and steroid for skin inflammation",
+    warning_ar: "لا يستخدم لفترات طويلة (يحتوي على كورتيزون)",
+    warning_en: "Do not use long-term (Contains cortisone)",
+    schedule_ar: "مرتين يومياً (صباحاً ومساءً)",
+    schedule_en: "Twice daily (Morning and evening)"
+  },
+  {
+    name_ar: "جارامايسين",
+    name_en: "Garamycin",
+    use_ar: "مضاد حيوي واسع المجال للجروح والحروق",
+    use_en: "Broad-spectrum antibiotic for wounds and burns",
+    warning_ar: "تأكد من نظافة الجرح قبل وضعه",
+    warning_en: "Clean the wound before application",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "تييراميسين (مرهم عين)",
+    name_en: "Terramycin Eye Ointment",
+    use_ar: "مضاد حيوي لعدوى العين والجفون",
+    use_en: "Antibiotic for eye and eyelid infections",
+    warning_ar: "قد يسبب تشوش مؤقت في الرؤية بعد وضعه",
+    warning_en: "May cause temporary blurred vision",
+    schedule_ar: "داخل الجفن 2-3 مرات يومياً",
+    schedule_en: "Inside eyelid 2-3 times daily"
+  },
+  {
+    name_ar: "أكرتين",
+    name_en: "Acretin",
+    use_ar: "لعلاج حب الشباب وتقشير البشرة",
+    use_en: "Treats acne and skin peeling",
+    warning_ar: "يوضع ليلاً فقط (ممنوع التعرض للشمس)",
+    warning_en: "Apply at night only (Avoid sun exposure)",
+    schedule_ar: "مرة واحدة مساءً (كمية صغيرة جداً)",
+    schedule_en: "Once daily at evening (pea-sized amount)"
+  },
+  {
+    name_ar: "ديفرين",
+    name_en: "Differin",
+    use_ar: "لعلاج حب الشباب والرؤوس السوداء",
+    use_en: "Treats acne and blackheads",
+    warning_ar: "قد يسبب جفافاً للبشرة في البداية",
+    warning_en: "May cause skin dryness initially",
+    schedule_ar: "مرة واحدة يومياً في المساء",
+    schedule_en: "Once daily in the evening"
+  },
+  {
+    name_ar: "سكنورين",
+    name_en: "Skinoren",
+    use_ar: "للتصبغات، الكلف، وآثار الحبوب",
+    use_en: "For pigmentation, melasma, and acne scars",
+    warning_ar: "قد يسبب وخزاً بسيطاً عند وضعه",
+    warning_en: "May cause mild stinging upon application",
+    schedule_ar: "مرتين يومياً (صباحاً ومساءً)",
+    schedule_en: "Twice daily (Morning and evening)"
+  },
+  {
+    name_ar: "كونتراكتيوبكس",
+    name_en: "Contractubex",
+    use_ar: "لعلاج الندبات وآثار الجروح والحروق القديمة",
+    use_en: "Treats scars and old wound/burn marks",
+    warning_ar: "يجب الاستمرار عليه لعدة أشهر للنتيجة",
+    warning_en: "Must be used for months for results",
+    schedule_ar: "تدليك المنطقة 3-4 مرات يومياً",
+    schedule_en: "Massage area 3-4 times daily"
+  },
+  {
+    name_ar: "ميبو سكار",
+    name_en: "Mebo Scar",
+    use_ar: "لتحسين مظهر الجلد بعد العمليات والجروح",
+    use_en: "Improves skin appearance after surgeries/wounds",
+    warning_ar: "لا يوضع على الجروح المفتوحة (بعد الالتئام فقط)",
+    warning_en: "Not on open wounds (Only after healing)",
+    schedule_ar: "مرتين يومياً مع التدليك",
+    schedule_en: "Twice daily with massage"
+  },
+  {
+    name_ar: "ريباريل جيل",
+    name_en: "Reparil Gel",
+    use_ar: "للكدمات، التورمات، والالتواءات (يبرد الألم)",
+    use_en: "For bruises, swelling, and sprains (Cooling)",
+    warning_ar: "لا يوضع على الجروح المفتوحة أو العين",
+    warning_en: "Do not apply on open wounds or eyes",
+    schedule_ar: "دهان 3 مرات يومياً",
+    schedule_en: "Apply 3 times daily"
+  },
+  {
+    name_ar: "هيموكلار",
+    name_en: "Hemoclar",
+    use_ar: "علاج التجمعات الدموية والكدمات (الزرقاء)",
+    use_en: "Treats hematomas and bruises",
+    warning_ar: "تجنب التعرض للشمس المباشرة للمنطقة المصابة",
+    warning_en: "Avoid direct sun on affected area",
+    schedule_ar: "2-4 مرات يومياً تدليك خفيف",
+    schedule_en: "2-4 times daily gentle massage"
+  },
+  {
+    name_ar: "ثرمبوفوب",
+    name_en: "Thrombophob",
+    use_ar: "علاج التهاب الأوردة السطحية والجلطات تحت الجلد",
+    use_en: "Treats superficial phlebitis and subcutaneous clots",
+    warning_ar: "لا يدلك بقوة في حالات الجلطات",
+    warning_en: "Do not massage hard in clot cases",
+    schedule_ar: "دهان رقيق مرتين يومياً",
+    schedule_en: "Thin layer twice daily"
+  },
+  {
+    name_ar: "فاستم جيل",
+    name_en: "Fastum Gel",
+    use_ar: "مسكن لآلام الظهر، الرقبة، والمفاصل",
+    use_en: "Pain reliever for back, neck, and joints",
+    warning_ar: "يسبب حساسية ضوئية (غطِ المنطقة عن الشمس)",
+    warning_en: "Causes photosensitivity (Cover from sun)",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ديب هيت",
+    name_en: "Deep Heat",
+    use_ar: "تسخين العضلات قبل الرياضة وعلاج التشنج",
+    use_en: "Warms muscles before sports and treats spasms",
+    warning_ar: "يسبب حرارة واحمراراً بالجلد (طبيعي)",
+    warning_en: "Causes heat and redness (Normal)",
+    schedule_ar: "قبل التمرين أو عند الألم",
+    schedule_en: "Before exercise or at pain"
+  },
+  {
+    name_ar: "ألجازون",
+    name_en: "Algason",
+    use_ar: "كريم مساج مسكن للآلام الروماتيزمية",
+    use_en: "Massage cream for rheumatic pain",
+    warning_ar: "لا يستخدم للأطفال الصغار",
+    warning_en: "Not for young children",
+    schedule_ar: "دهان مع التدليك 3 مرات يومياً",
+    schedule_en: "Apply with massage 3 times daily"
+  },
+  {
+    name_ar: "زوفيراكس (كريم)",
+    name_en: "Zovirax Cream",
+    use_ar: "لعلاج قرح البرد (الهربس) حول الفم",
+    use_en: "Treats cold sores (Herpes) around mouth",
+    warning_ar: "ابدأ استخدامه فور الشعور بالحكة",
+    warning_en: "Start using as soon as tingling starts",
+    schedule_ar: "5 مرات يومياً (كل 4 ساعات)",
+    schedule_en: "5 times daily (Every 4 hours)"
+  },
+  {
+    name_ar: "سيديبوركت",
+    name_en: "Sediproct",
+    use_ar: "مرهم للبواسير والشرخ الشرجي (مسكن وقابض)",
+    use_en: "Ointment for hemorrhoids and fissures",
+    warning_ar: "يفضل استخدامه بعد الحمام الدافئ",
+    warning_en: "Best used after warm bath",
+    schedule_ar: "صباحاً ومساءً وبعد التبرز",
+    schedule_en: "Morning, evening, and after defecation"
+  },
+  {
+    name_ar: "فاكتو",
+    name_en: "Faktu",
+    use_ar: "علاج البواسير الداخلية والخارجية",
+    use_en: "Treats internal and external hemorrhoids",
+    warning_ar: "يستخدم القمع المرفق للبواسير الداخلية",
+    warning_en: "Use applicator for internal ones",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "بروكتو جليفينول",
+    name_en: "Procto-Glyvenol",
+    use_ar: "كريم مخدر ومضاد لالتهاب البواسير",
+    use_en: "Anesthetic and anti-inflammatory for hemorrhoids",
+    warning_ar: "يخفف الألم والحكة بسرعة",
+    warning_en: "Relieves pain and itching fast",
+    schedule_ar: "صباحاً ومساءً",
+    schedule_en: "Morning and evening"
+  },
+  {
+    name_ar: "زايلوكين جيل",
+    name_en: "Xylocaine Jelly",
+    use_ar: "مخدر موضعي للجلد والأغشية المخاطية",
+    use_en: "Local anesthetic for skin and mucous membranes",
+    warning_ar: "يستخدم قبل الإجراءات المؤلمة بـ 10 دقائق",
+    warning_en: "Use 10 mins before painful procedures",
+    schedule_ar: "عند اللزوم",
+    schedule_en: "As needed"
+  },
+  {
+    name_ar: "مرهم إكثامول (الأسود)",
+    name_en: "Ichthammol (Black Ointment)",
+    use_ar: "لسحب الصديد من الدمامل والخراجات",
+    use_en: "Draws pus out of boils and abscesses",
+    warning_ar: "يصبغ الملابس (يوضع غيار عليه)",
+    warning_en: "Stains clothes (Cover with dressing)",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "Once or twice daily"
+  },
+  {
+    name_ar: "ديرموفيت",
+    name_en: "Dermovate",
+    use_ar: "كورتيزون قوي للصدفية والإكزيما الشديدة",
+    use_en: "Strong steroid for psoriasis and severe eczema",
+    warning_ar: "لا يستخدم للوجه أو المناطق الحساسة",
+    warning_en: "Not for face or sensitive areas",
+    schedule_ar: "مرة أو مرتين يومياً (أسبوعين كحد أقصى)",
+    schedule_en: "1-2 times daily (Max 2 weeks)"
+  },
+  {
+    name_ar: "إليكا",
+    name_en: "Elica",
+    use_ar: "لعلاج الحساسية الجلدية والالتهابات والحكة",
+    use_en: "Treats skin allergy, inflammation, and itching",
+    warning_ar: "طبقة رقيقة فقط",
+    warning_en: "Thin layer only",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "كيو في",
+    name_en: "QV Cream",
+    use_ar: "مرطب قوي للبشرة الجافة جداً والحساسة",
+    use_en: "Intense moisturizer for dry sensitive skin",
+    warning_ar: "آمن لجميع الأعمار",
+    warning_en: "Safe for all ages",
+    schedule_ar: "يومياً بعد الاستحمام",
+    schedule_en: "Daily after shower"
+  },
+  {
+    name_ar: "سودو كريم",
+    name_en: "Sudocrem",
+    use_ar: "واقي من طفح الحفاض والحروق السطحية",
+    use_en: "Protects from diaper rash and surface burns",
+    warning_ar: "يحتوي على الزنك العازل للرطوبة",
+    warning_en: "Contains zinc to block moisture",
+    schedule_ar: "عند كل تغيير حفاض",
+    schedule_en: "At every diaper change"
+  },
+  {
+    name_ar: "زينك أوليف",
+    name_en: "Zinc Olive",
+    use_ar: "للتسلخات وطفح الحفاض (طبيعي)",
+    use_en: "For rashes and diaper rash (Natural)",
+    warning_ar: "رجه جيداً قبل الاستخدام",
+    warning_en: "Shake well before use",
+    schedule_ar: "مع كل غيار",
+    schedule_en: "With every change"
+  },
+  {
+    name_ar: "دكتاكورت",
+    name_en: "Daktacort",
+    use_ar: "مضاد فطريات مع كورتيزون خفيف (بين الفخذين)",
+    use_en: "Antifungal with mild steroid (Groin area)",
+    warning_ar: "لا يستخدم لأكثر من أسبوعين",
+    warning_en: "Do not use for more than 2 weeks",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "لاميزيل",
+    name_en: "Lamisil",
+    use_ar: "علاج فطريات القدم (التينيا) وبين الأصابع",
+    use_en: "Treats athlete's foot and toe fungus",
+    warning_ar: "يجب تنشيف القدم جيداً قبل وضعه",
+    warning_en: "Dry foot well before application",
+    schedule_ar: "مرة واحدة يومياً لمدة أسبوع",
+    schedule_en: "Once daily for a week"
+  },
+  {
+    name_ar: "كانستين (محلول)",
+    name_en: "Canesten Solution",
+    use_ar: "فطريات الأظافر والجلد",
+    use_en: "Nail and skin fungus",
+    warning_ar: "للاستخدام الخارجي",
+    warning_en: "External use",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "باترافين",
+    name_en: "Batrafen",
+    use_ar: "مضاد فطريات واسع المجال للجلد والأظافر",
+    use_en: "Broad spectrum antifungal for skin/nails",
+    warning_ar: "استمر في العلاج حتى بعد اختفاء الأعراض بأسبوع",
+    warning_en: "Continue treatment 1 week after symptoms clear",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "فيوسيدين H",
+    name_en: "Fucidin H",
+    use_ar: "مضاد حيوي وكورتيزون للالتهابات والاحمرار",
+    use_en: "Antibiotic & Cortisone for inflammation/redness",
+    warning_ar: "للوجه والمناطق الحساسة لفترة قصيرة",
+    warning_en: "For face/sensitive areas short term",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "بوليدرم",
+    name_en: "Polyderm",
+    use_ar: "مضاد حيوي وفطريات وكورتيزون (شامل)",
+    use_en: "Antibiotic, Antifungal, Cortisone (All-in-one)",
+    warning_ar: "يستخدم عند عدم تحديد نوع العدوى بدقة",
+    warning_en: "Used when infection type is unclear",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "بانيوسين",
+    name_en: "Baneocin",
+    use_ar: "مضاد حيوي (بودرة أو مرهم) للجروح الملوثة",
+    use_en: "Antibiotic (powder/ointment) for infected wounds",
+    warning_ar: "لا يوضع على مساحات واسعة جداً",
+    warning_en: "Not for very large areas",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "ديرمازين",
+    name_en: "Dermazin",
+    use_ar: "كريم الفضة لحماية وعلاج الحروق",
+    use_en: "Silver cream for burn protection/treatment",
+    warning_ar: "يجب إزالة الطبقة القديمة قبل وضع الجديدة",
+    warning_en: "Remove old layer before applying new one",
+    schedule_ar: "مرة أو مرتين يومياً (طبقة سميكة)",
+    schedule_en: "1-2 times daily (Thick layer)"
+  },
+  {
+    name_ar: "إيروكسول",
+    name_en: "Iruxol",
+    use_ar: "للتنظيف الإنزيمي للجروح والقرح (الغرغرينا)",
+    use_en: "Enzymatic cleaning for wounds/ulcers (Gangrene)",
+    warning_ar: "يوضع فقط على الأنسجة الميتة",
+    warning_en: "Apply only on dead tissue",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "جنجيجيل",
+    name_en: "Gengigel",
+    use_ar: "جل لعلاج التهابات اللثة وقرح الفم",
+    use_en: "Gel for gum inflammation and mouth ulcers",
+    warning_ar: "آمن للبلع، لا تأكل بعده بـ 30 دقيقة",
+    warning_en: "Safe to swallow, no food for 30 mins after",
+    schedule_ar: "3-4 مرات يومياً بعد الأكل",
+    schedule_en: "3-4 times daily after meals"
+  },
+  {
+    name_ar: "دكتارين (جل فموي)",
+    name_en: "Daktarin Oral Gel",
+    use_ar: "لعلاج فطريات الفم واللسان (القلاع)",
+    use_en: "Treats oral thrush and tongue fungus",
+    warning_ar: "يحتفظ به في الفم قليلاً قبل البلع",
+    warning_en: "Hold in mouth before swallowing",
+    schedule_ar: "4 مرات يومياً بعد الأكل",
+    schedule_en: "4 times daily after meals"
+  },
+  {
+    name_ar: "سولكو سيريل",
+    name_en: "Solcoseryl",
+    use_ar: "يسرع التئام الجروح والقرح والحروق",
+    use_en: "Accelerates healing of wounds, ulcers, burns",
+    warning_ar: "للجروح الجافة وغير المفرزة",
+    warning_en: "For dry non-weeping wounds",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ادابالين",
+    name_en: "Adapalene",
+    use_ar: "جيل لعلاج حب الشباب (أخف من الأكرتين)",
+    use_en: "Acne gel (Milder than Acretin)",
+    warning_ar: "يوضع مساءً وتجنب الضوء",
+    warning_en: "Apply evening, avoid light",
+    schedule_ar: "مرة واحدة مساءً",
+    schedule_en: "Once daily evening"
+  },
+  {
+    name_ar: "كلينداسول",
+    name_en: "Clindasol",
+    use_ar: "محلول/جيل مضاد حيوي لحب الشباب",
+    use_en: "Antibiotic solution/gel for acne",
+    warning_ar: "يوضع على الحبة فقط",
+    warning_en: "Apply on spots only",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "هيرودويد",
+    name_en: "Hirudoid",
+    use_ar: "للدوالي والكدمات وتسريع امتصاص التورم",
+    use_en: "For varicose veins, bruises, swelling absorption",
+    warning_ar: "يدلك حتى يمتصه الجلد تماماً",
+    warning_en: "Massage until fully absorbed",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "فيزوتيرز (دموع صناعية)",
+    name_en: "Viscotears",
+    use_ar: "جيل لترطيب العين الجافة (يدوم طويلاً)",
+    use_en: "Gel for dry eyes (Long lasting)",
+    warning_ar: "قد يغيم الرؤية للحظات",
+    warning_en: "May blur vision momentarily",
+    schedule_ar: "3-4 مرات يومياً أو قبل النوم",
+    schedule_en: "3-4 times daily or before bed"
+  },
+  {
+    name_ar: "توبرين",
+    name_en: "Tobrex",
+    use_ar: "مرهم مضاد حيوي للعين (للأطفال والكبار)",
+    use_en: "Eye antibiotic ointment (Kids/Adults)",
+    warning_ar: "طرف الأنبوب لا يلمس العين",
+    warning_en: "Tube tip must not touch eye",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "كيناكومب (للتسلخات)",
+    name_en: "Kenacomb",
+    use_ar: "التهابات فطرية بكتيرية شديدة",
+    use_en: "Severe fungal/bacterial infections",
+    warning_ar: "لا يستخدم للأطفال بكثرة (يحتوي كورتيزون)",
+    warning_en: "Not much for kids (Contains steroid)",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "بيتازول",
+    name_en: "Betazol",
+    use_ar: "مضاد فطريات وكورتيزون (بديل دكتاكورت)",
+    use_en: "Antifungal & steroid",
+    warning_ar: "للاستخدام الخارجي",
+    warning_en: "External use",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "آزادر م",
+    name_en: "Azaderm",
+    use_ar: "كريم لعلاج حب الشباب (يحتوي حمض الازيليك)",
+    use_en: "Acne cream (Azelaic acid)",
+    warning_ar: "آمن للحوامل (استشر الطبيب)",
+    warning_en: "Safe for pregnancy (Consult doctor)",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "فيكس فابوراب",
+    name_en: "Vicks VapoRub",
+    use_ar: "دهان للصدر لعلاج الاحتقان والزكام",
+    use_en: "Chest rub for congestion and cold",
+    warning_ar: "لا يوضع داخل الأنف أو للأطفال دون سنتين",
+    warning_en: "Not inside nose or for kids under 2",
+    schedule_ar: "عند النوم",
+    schedule_en: "At bedtime"
+  },
+  {
+    name_ar: "ساليبت",
+    name_en: "Salibet",
+    use_ar: "للصدفية والإكزيما المتقشرة (يزيل القشور)",
+    use_en: "For psoriasis and scaly eczema (Removes scales)",
+    warning_ar: "لا يستخدم للوجه",
+    warning_en: "Not for face",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "ديفوبيت",
+    name_en: "Daivobet",
+    use_ar: "علاج متخصص لمرض الصدفية",
+    use_en: "Specialized treatment for psoriasis",
+    warning_ar: "يستخدم تحت إشراف طبي",
+    warning_en: "Use under medical supervision",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  }, 
+  {
+    name_ar: "بيتنوفت",
+    name_en: "Betnovate",
+    use_ar: "علاج الالتهابات الجلدية، الصدفية، والإكزيما",
+    use_en: "Treats skin inflammation, psoriasis, and eczema",
+    warning_ar: "يحتوي على كورتيزون، لا يستخدم على الجروح",
+    warning_en: "Contains steroid, do not use on open wounds",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "فولتارين إيمولجيل",
+    name_en: "Voltaren Emulgel",
+    use_ar: "مسكن موضعي قوي لآلام المفاصل والعضلات",
+    use_en: "Potent topical analgesic for joints and muscles",
+    warning_ar: "لا يوضع على الجلد المتشقق أو المجروح",
+    warning_en: "Do not apply to broken or wounded skin",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "بيمافوكورت",
+    name_en: "Pimafucort",
+    use_ar: "علاج شامل للالتهابات الفطرية والبكتيرية",
+    use_en: "Treats fungal and bacterial skin infections",
+    warning_ar: "يستخدم لفترات قصيرة فقط",
+    warning_en: "For short-term use only",
+    schedule_ar: "2-4 مرات يومياً",
+    schedule_en: "2-4 times daily"
+  },
+  {
+    name_ar: "أدفتان",
+    name_en: "Advantan",
+    use_ar: "علاج الحساسية الجلدية الشديدة والإكزيما",
+    use_en: "Treats severe skin allergies and eczema",
+    warning_ar: "تجنب ملامسة العين",
+    warning_en: "Avoid eye contact",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "بيافين",
+    name_en: "Biafine",
+    use_ar: "ترميم الجلد بعد الحروق والتعرض للإشعاع",
+    use_en: "Skin repair after burns and radiation",
+    warning_ar: "يوضع بطبقة سميكة ولا يدلك بقوة",
+    warning_en: "Apply in thick layer, don't massage hard",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "مووف",
+    name_en: "Moov Cream",
+    use_ar: "دهان مساج لآلام الظهر والرقبة والالتواءات",
+    use_en: "Massage cream for back, neck pain, and sprains",
+    warning_ar: "يسبب إحساساً بالحرارة، لا يستخدم للأطفال دون 5 سنوات",
+    warning_en: "Causes heat sensation, not for kids under 5",
+    schedule_ar: "عند الشعور بالألم",
+    schedule_en: "Upon feeling pain"
+  },
+  {
+    name_ar: "أنوسول",
+    name_en: "Anusol",
+    use_ar: "تخفيف أعراض البواسير والهرش الشرجى",
+    use_en: "Relieves hemorrhoid symptoms and anal itching",
+    warning_ar: "للاستخدام الخارجي أو الموضعي فقط",
+    warning_en: "External or topical use only",
+    schedule_ar: "صباحاً ومساءً وبعد كل تبرز",
+    schedule_en: "Morning, evening, and after each bowel movement"
+  },
+  {
+    name_ar: "فيجاموكس",
+    name_en: "Vigamox",
+    use_ar: "مرهم مضاد حيوي قوي للعين",
+    use_en: "Potent eye antibiotic ointment",
+    warning_ar: "قد يسبب تهيجاً مؤقتاً في العين",
+    warning_en: "May cause temporary eye irritation",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "دكتارين (كريم جلد)",
+    name_en: "Daktarin Cream",
+    use_ar: "علاج فطريات الجلد والقدم الرياضي",
+    use_en: "Treats skin fungus and athlete's foot",
+    warning_ar: "يجب الاستمرار عليه حتى اختفاء الأعراض بـ 10 أيام",
+    warning_en: "Continue 10 days after symptoms disappear",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "بيتادين (مرهم)",
+    name_en: "Betadine Ointment",
+    use_ar: "مطهر للجروح والحروق وقتل الجراثيم",
+    use_en: "Antiseptic for wounds and burns",
+    warning_ar: "قد يصبغ الجلد والملابس باللون البني",
+    warning_en: "May stain skin and clothes brown",
+    schedule_ar: "1-2 مرة يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "لوتريمين",
+    name_en: "Lotrimin",
+    use_ar: "مضاد للفطريات (تينيا الجسم والقدم)",
+    use_en: "Antifungal (Body and foot tinea)",
+    warning_ar: "للاستخدام الخارجي فقط",
+    warning_en: "External use only",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "شيروبروكت",
+    name_en: "Scheriproct",
+    use_ar: "علاج آلام والتهابات البواسير",
+    use_en: "Treats hemorrhoid pain and inflammation",
+    warning_ar: "لا يستخدم لفترات طويلة دون استشارة",
+    warning_en: "Don't use for long periods without advice",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ريتين أ",
+    name_en: "Retin-A",
+    use_ar: "علاج حب الشباب وتجديد خلايا البشرة",
+    use_en: "Treats acne and renews skin cells",
+    warning_ar: "ممنوع تماماً للحوامل، يوضع في الظلام",
+    warning_en: "Strictly forbidden for pregnancy, apply in dark",
+    schedule_ar: "مرة واحدة قبل النوم",
+    schedule_en: "Once at bedtime"
+  },
+  {
+    name_ar: "فيناسيا",
+    name_en: "Finacea",
+    use_ar: "علاج الوردية وحب الشباب الملتهب",
+    use_en: "Treats rosacea and inflammatory acne",
+    warning_ar: "قد يسبب جفافاً أو وخزاً في البداية",
+    warning_en: "May cause dryness or stinging initially",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "كيوتيفيت",
+    name_en: "Cutivate",
+    use_ar: "كريم لعلاج الإكزيما والتهابات الجلد",
+    use_en: "Cream for eczema and skin inflammation",
+    warning_ar: "كورتيزون متوسط القوة",
+    warning_en: "Moderate strength steroid",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "ترافوجين",
+    name_en: "Travogen",
+    use_ar: "مضاد فطريات واسع المدى للجلد",
+    use_en: "Broad spectrum antifungal for skin",
+    warning_ar: "للاستخدام الخارجي فقط",
+    warning_en: "For external use only",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "ميكوستاتين",
+    name_en: "Mycostatin",
+    use_ar: "علاج الالتهابات الفطرية (الكانديدا)",
+    use_en: "Treats fungal infections (Candida)",
+    warning_ar: "تجنب ملامسة العينين",
+    warning_en: "Avoid eye contact",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "جينتاسين",
+    name_en: "Gentacin",
+    use_ar: "مضاد حيوي لعلاج عدوى الجلد البكتيرية",
+    use_en: "Antibiotic for bacterial skin infections",
+    warning_ar: "لا يستخدم لمساحات كبيرة من الجسم",
+    warning_en: "Not for large areas of the body",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "كالامين",
+    name_en: "Calamine Lotion",
+    use_ar: "تلطيف الجلد في حالات جدري الماء والحكة",
+    use_en: "Soothes skin in chickenpox and itching",
+    warning_ar: "يرج جيداً قبل الاستخدام",
+    warning_en: "Shake well before use",
+    schedule_ar: "عند اللزوم",
+    schedule_en: "As needed"
+  },
+  {
+    name_ar: "إليديل",
+    name_en: "Elidel",
+    use_ar: "علاج الإكزيما (بديل آمن للكورتيزون)",
+    use_en: "Eczema treatment (Safe steroid alternative)",
+    warning_ar: "تجنب التعرض للشمس بعد وضعه",
+    warning_en: "Avoid sun exposure after application",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "دوفونيكس",
+    name_en: "Dovonex",
+    use_ar: "علاج الصدفية المزمنة",
+    use_en: "Treats chronic psoriasis",
+    warning_ar: "لا يستخدم للوجه",
+    warning_en: "Not for face",
+    schedule_ar: "1-2 مرة يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "فينيجان",
+    name_en: "Fenergan Cream",
+    use_ar: "علاج حساسية الجلد ولدغ الحشرات",
+    use_en: "Treats skin allergy and insect bites",
+    warning_ar: "قد يسبب حساسية ضوئية",
+    warning_en: "May cause photosensitivity",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "سوفراديكس",
+    name_en: "Sofradex Ointment",
+    use_ar: "علاج التهابات العين والأذن بكتيرياً",
+    use_en: "Treats bacterial eye and ear infections",
+    warning_ar: "لا يستخدم في حالة ثقب طبلة الأذن",
+    warning_en: "Not in case of perforated eardrum",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "أوفلوكس",
+    name_en: "Oflox",
+    use_ar: "مرهم مضاد حيوي للعين (للقرح البكتيرية)",
+    use_en: "Eye antibiotic ointment for bacterial ulcers",
+    warning_ar: "قد يسبب حساسية بسيطة في العين",
+    warning_en: "May cause mild eye sensitivity",
+    schedule_ar: "كل 4-6 ساعات",
+    schedule_en: "Every 4-6 hours"
+  },
+  {
+    name_ar: "فيديسيك",
+    name_en: "Vidisic Gel",
+    use_ar: "جيل بديل للدموع لعلاج جفاف العين الشديد",
+    use_en: "Tear substitute for severe dry eye",
+    warning_ar: "قد يسبب غشاوة مؤقتة في الرؤية",
+    warning_en: "May cause temporary blurred vision",
+    schedule_ar: "3-5 مرات يومياً",
+    schedule_en: "3-5 times daily"
+  },
+  {
+    name_ar: "هايكورت",
+    name_en: "Hycort",
+    use_ar: "كورتيزون خفيف لعلاج حساسية الجلد البسيطة",
+    use_en: "Mild steroid for simple skin allergies",
+    warning_ar: "آمن نسبياً للأطفال لفترات قصيرة",
+    warning_en: "Relatively safe for kids short-term",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "بي-فريش",
+    name_en: "B-Fresh Gel",
+    use_ar: "جيل مطهر ومنعش للفم واللثة",
+    use_en: "Antiseptic and refreshing mouth/gum gel",
+    warning_ar: "لا يبلع بكميات كبيرة",
+    warning_en: "Do not swallow in large amounts",
+    schedule_ar: "3 مرات يومياً بعد الأكل",
+    schedule_en: "3 times daily after meals"
+  },
+  {
+    name_ar: "أوراكيور",
+    name_en: "Ora-cure",
+    use_ar: "جيل لعلاج قرح الفم والتهابات اللثة",
+    use_en: "Gel for mouth ulcers and gum inflammation",
+    warning_ar: "تجنب الأكل والشرب بعده مباشرة",
+    warning_en: "Avoid eating or drinking immediately after",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "بوروزين",
+    name_en: "Borozin",
+    use_ar: "علاج رائحة القدم الكريهة والفطريات",
+    use_en: "Treats bad foot odor and fungus",
+    warning_ar: "يوضع داخل الحذاء والجورب أيضاً",
+    warning_en: "Apply inside shoes and socks too",
+    schedule_ar: "مرة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "مرهم ويتفيلد",
+    name_en: "Whitfield’s Ointment",
+    use_ar: "علاج الفطريات الجلدية السميكة",
+    use_en: "Treats thick fungal skin infections",
+    warning_ar: "قد يسبب حرقان بسيط في الجلد",
+    warning_en: "May cause mild skin burning",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ديبروساليك",
+    name_en: "Diprosalic",
+    use_ar: "علاج الصدفية وحالات الجلد القشرية",
+    use_en: "Treats psoriasis and scaly skin conditions",
+    warning_ar: "يحتوي على حمض الساليسيليك وكورتيزون",
+    warning_en: "Contains salicylic acid and steroid",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ديبروجينتا",
+    name_en: "Diprogenta",
+    use_ar: "علاج الالتهابات الجلدية المصحوبة بعدوى",
+    use_en: "Treats skin inflammation with infection",
+    warning_ar: "لا يستخدم للوجه إلا باستشارة",
+    warning_en: "Not for face unless advised",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "جينتالين",
+    name_en: "Gentaline",
+    use_ar: "مضاد حيوي موضعي للجروح",
+    use_en: "Topical antibiotic for wounds",
+    warning_ar: "للاستخدام الخارجي",
+    warning_en: "For external use",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "كلاريديرم",
+    name_en: "Clariderm",
+    use_ar: "كريم لتفتيح البقع الداكنة وتوحيد اللون",
+    use_en: "Cream for dark spots and skin evening",
+    warning_ar: "يجب استخدامه مساءً مع واقي شمس صباحاً",
+    warning_en: "Use at night with morning sunscreen",
+    schedule_ar: "مرة واحدة مساءً",
+    schedule_en: "Once nightly"
+  },
+  {
+    name_ar: "مترولوشن",
+    name_en: "Metrolotion",
+    use_ar: "علاج موضعي للعد الوردي والالتهابات",
+    use_en: "Topical treatment for rosacea and inflammation",
+    warning_ar: "تجنب ملامسة العين والأغشية المخاطية",
+    warning_en: "Avoid contact with eyes and mucosa",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "سوبيروسين",
+    name_en: "Supirocin",
+    use_ar: "مضاد حيوي لعدوى الجلد (موبروسين)",
+    use_en: "Antibiotic for skin infections (Mupirocin)",
+    warning_ar: "فعال جداً ضد البكتيريا العنقودية",
+    warning_en: "Highly effective against Staph",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "بولي فريش",
+    name_en: "Poly-Fresh Oint.",
+    use_ar: "مرهم مرطب للعين لحالات الجفاف",
+    use_en: "Moisturizing eye ointment for dryness",
+    warning_ar: "يفضل استخدامه قبل النوم لثباته",
+    warning_en: "Best used before bed due to stability",
+    schedule_ar: "مرة قبل النوم",
+    schedule_en: "Once at bedtime"
+  },
+  {
+    name_ar: "هاي فريش",
+    name_en: "Hyfresh Gel",
+    use_ar: "جيل مرطب للعين (بديل قطرات الهيالورونات)",
+    use_en: "Moisturizing eye gel",
+    warning_ar: "لا يلمس طرف الأنبوب العين",
+    warning_en: "Tube tip should not touch eye",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "جينسيبت",
+    name_en: "Gencept Cream",
+    use_ar: "مضاد بكتيري واسع المدى للجروح",
+    use_en: "Broad spectrum antibacterial for wounds",
+    warning_ar: "نظف الجرح قبل الاستخدام",
+    warning_en: "Clean wound before use",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "روزيكس",
+    name_en: "Rozex Gel",
+    use_ar: "علاج متخصص للوردية الجلدية",
+    use_en: "Specialized treatment for rosacea",
+    warning_ar: "قد يسبب احمراراً بسيطاً في البداية",
+    warning_en: "May cause mild initial redness",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "إيتش-ستوب",
+    name_en: "Itch-stop",
+    use_ar: "تخفيف الحكة الجلدية وتهيجات الجلد",
+    use_en: "Relieves skin itching and irritation",
+    warning_ar: "لا يوضع على الجروح المفتوحة",
+    warning_en: "Do not use on open wounds",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "سكابيراكس",
+    name_en: "Scabirax",
+    use_ar: "علاج الجرب والعدوى الجلدية الطفيلية",
+    use_en: "Treats scabies and parasitic skin infections",
+    warning_ar: "يدهن للجسم كله من الرقبة لأسفل",
+    warning_en: "Apply to whole body from neck down",
+    schedule_ar: "مرة واحدة تترك لـ 12 ساعة",
+    schedule_en: "Once left for 12 hours"
+  },
+  {
+    name_ar: "فونجيكان",
+    name_en: "Fungican",
+    use_ar: "كريم مضاد للفطريات الجلدية",
+    use_en: "Antifungal skin cream",
+    warning_ar: "للاستخدام الخارجي",
+    warning_en: "External use",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "كيتوديرم",
+    name_en: "Ketoderm",
+    use_ar: "علاج فطريات الجلد والقشور",
+    use_en: "Treats skin fungus and scales",
+    warning_ar: "تجنب ملامسة العين",
+    warning_en: "Avoid eye contact",
+    schedule_ar: "1-2 مرة يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "لوكاسالين",
+    name_en: "Locasalen",
+    use_ar: "علاج الإكزيما المزمنة المصحوبة بقشور",
+    use_en: "Treats chronic scaly eczema",
+    warning_ar: "لا يستخدم للأطفال دون سن العامين",
+    warning_en: "Not for children under 2",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "نيريزون",
+    name_en: "Nerisone",
+    use_ar: "كورتيزون قوي للالتهابات الجلدية الشديدة",
+    use_en: "Strong steroid for severe skin inflammation",
+    warning_ar: "استخدام قصير الأمد فقط",
+    warning_en: "Short-term use only",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ديبرولين",
+    name_en: "Diprolene",
+    use_ar: "كريم لعلاج التهابات الجلد والصدفية",
+    use_en: "Cream for skin inflammation and psoriasis",
+    warning_ar: "قوي جداً، تجنب استخدامه على مساحات واسعة",
+    warning_en: "Very potent, avoid large areas",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "أوكوفلوكس",
+    name_en: "Ocuflox",
+    use_ar: "مرهم مضاد حيوي للعين واسع المدى",
+    use_en: "Broad spectrum eye antibiotic ointment",
+    warning_ar: "انزع العدسات اللاصقة",
+    warning_en: "Remove contact lenses",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "أوبتيكورت",
+    name_en: "Opticort",
+    use_ar: "مرهم عين مضاد للالتهاب والحساسية",
+    use_en: "Anti-inflammatory and anti-allergy eye ointment",
+    warning_ar: "لا يستخدم في حالات الفيروسات",
+    warning_en: "Not for viral cases",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  }, 
+  {
+    name_ar: "إليكوم",
+    name_en: "Elocon",
+    use_ar: "كورتيزون متوسط القوة للإكزيما والصدفية",
+    use_en: "Medium potency steroid for eczema and psoriasis",
+    warning_ar: "طبقة رقيقة جداً، لا يستخدم لفترات طويلة",
+    warning_en: "Thin layer, do not use for long periods",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "باكتروبان",
+    name_en: "Bactroban",
+    use_ar: "مضاد حيوي قوي لعدوى الجلد (القوباء)",
+    use_en: "Strong antibiotic for skin infections (Impetigo)",
+    warning_ar: "تأكد من نظافة المنطقة قبل وضعه",
+    warning_en: "Ensure area is clean before application",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "بنزالك",
+    name_en: "Benzac AC",
+    use_ar: "علاج حب الشباب (يقتل البكتيريا ويقشر)",
+    use_en: "Acne treatment (Antibacterial and peeling)",
+    warning_ar: "قد يبيض الملابس والشعر، يسبب جفاف",
+    warning_en: "May bleach clothes/hair, causes dryness",
+    schedule_ar: "مرة واحدة مساءً (ابدأ بتركيز قليل)",
+    schedule_en: "Once daily evening (Start low conc.)"
+  },
+  {
+    name_ar: "إيبيدو",
+    name_en: "Epiduo",
+    use_ar: "جيل متطور لعلاج حب الشباب وآثاره",
+    use_en: "Advanced gel for acne and scars",
+    warning_ar: "يسبب تهيج في البداية، استخدم مرطب",
+    warning_en: "Causes initial irritation, use moisturizer",
+    schedule_ar: "مرة واحدة ليلاً (كمية بحجم العدسة)",
+    schedule_en: "Once nightly (pea-sized amount)"
+  },
+  {
+    name_ar: "نيزورال كريم",
+    name_en: "Nizoral Cream",
+    use_ar: "مضاد للفطريات الجلدية والتينيا الملونة",
+    use_en: "Antifungal for skin and tinea versicolor",
+    warning_ar: "استمر في الاستخدام لبضعة أيام بعد الشفاء",
+    warning_en: "Continue use for days after healing",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "دالاسين تي (محلول)",
+    name_en: "Dalacin T",
+    use_ar: "مضاد حيوي موضعي لحب الشباب الملتهب",
+    use_en: "Topical antibiotic for inflamed acne",
+    warning_ar: "تجنب ملامسة العينين",
+    warning_en: "Avoid contact with eyes",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "بروتوبيك",
+    name_en: "Protopic",
+    use_ar: "علاج الإكزيما التأتبية (خالٍ من الكورتيزون)",
+    use_en: "Atopic eczema treatment (Steroid-free)",
+    warning_ar: "قد تشعر بحرقة بسيطة عند وضعه أول مرة",
+    warning_en: "May feel burning sensation initially",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ترافوكورت",
+    name_en: "Travocort",
+    use_ar: "مضاد فطريات مع كورتيزون للالتهاب الشديد",
+    use_en: "Antifungal with steroid for severe inflammation",
+    warning_ar: "لا يستخدم لأكثر من أسبوعين",
+    warning_en: "Do not use for more than 2 weeks",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "ديرماتين",
+    name_en: "Dermatin",
+    use_ar: "مضاد للفطريات (التينيا والقدم الرياضي)",
+    use_en: "Antifungal (Tinea and Athlete's foot)",
+    warning_ar: "يجب تجفيف الجلد جيداً قبل الاستخدام",
+    warning_en: "Dry skin well before use",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "لوكوييد",
+    name_en: "Locoid",
+    use_ar: "كورتيزون دهني للجلد الجاف والمتهيج",
+    use_en: "Lipocream steroid for dry irritated skin",
+    warning_ar: "لا يستخدم على الوجه لفترات طويلة",
+    warning_en: "Not on face for long periods",
+    schedule_ar: "مرة أو مرتين يومياً",
+    schedule_en: "1-2 times daily"
+  },
+  {
+    name_ar: "بيفاريل",
+    name_en: "Pevaryl",
+    use_ar: "كريم لعلاج الفطريات الجلدية",
+    use_en: "Cream for fungal skin infections",
+    warning_ar: "للاستخدام الخارجي فقط",
+    warning_en: "External use only",
+    schedule_ar: "صباحاً ومساءً",
+    schedule_en: "Morning and evening"
+  },
+  {
+    name_ar: "فيوسي",
+    name_en: "Fusi",
+    use_ar: "مضاد حيوي (بديل فيوسيدين)",
+    use_en: "Antibiotic (Fucidin alternative)",
+    warning_ar: "للجروح والدمامل",
+    warning_en: "For wounds and boils",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "ماكسيترول (مرهم عين)",
+    name_en: "Maxitrol Ointment",
+    use_ar: "مضاد حيوي وكورتيزون للعين",
+    use_en: "Antibiotic and steroid for eye",
+    warning_ar: "لا يستخدم في حالات العدوى الفيروسية",
+    warning_en: "Not for viral infections",
+    schedule_ar: "داخل الجفن 3 مرات يومياً",
+    schedule_en: "Inside eyelid 3 times daily"
+  },
+  {
+    name_ar: "كلورامفينيكول (مرهم عين)",
+    name_en: "Chloramphenicol Eye",
+    use_ar: "مضاد حيوي شامل لعدوى العين",
+    use_en: "Broad spectrum eye antibiotic",
+    warning_ar: "قد يسبب تشوش رؤية مؤقت",
+    warning_en: "Temporary blurred vision",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "فيوسيثالميك",
+    name_en: "Fucithalmic",
+    use_ar: "جيل لزج مضاد حيوي للعين (مفعول طويل)",
+    use_en: "Viscous eye antibiotic gel (Long acting)",
+    warning_ar: "قطرة واحدة تكفي لفترة طويلة",
+    warning_en: "One drop lasts long",
+    schedule_ar: "مرتين يومياً (صباحاً ومساءً)",
+    schedule_en: "Twice daily (Morning and evening)"
+  },
+  {
+    name_ar: "سيكلوفيرال",
+    name_en: "Cycloviral",
+    use_ar: "كريم لعلاج الهربس (بديل زوفيراكس)",
+    use_en: "Herpes cream (Zovirax alternative)",
+    warning_ar: "ابدأ عند أول شعور بالوخز",
+    warning_en: "Start at first tingle",
+    schedule_ar: "5 مرات يومياً",
+    schedule_en: "5 times daily"
+  },
+  {
+    name_ar: "كينالوج (أورابيز)",
+    name_en: "Kenalog in Orabase",
+    use_ar: "معجون لعلاج قرح الفم والتهاب اللثة",
+    use_en: "Paste for mouth ulcers and gum inflammation",
+    warning_ar: "يوضع بعد الأكل ولا يفرك (يشكل طبقة)",
+    warning_en: "Apply after food, don't rub (forms film)",
+    schedule_ar: "2-3 مرات يومياً ويفضل قبل النوم",
+    schedule_en: "2-3 times daily, preferably bedtime"
+  },
+  {
+    name_ar: "دكتاكورت (جيل فموي)",
+    name_en: "Miconaz Oral Gel",
+    use_ar: "لعلاج فطريات اللسان والفم",
+    use_en: "Treats tongue and oral fungus",
+    warning_ar: "يحتفظ به في الفم أطول فترة ممكنة",
+    warning_en: "Keep in mouth as long as possible",
+    schedule_ar: "4 مرات يومياً بعد الأكل",
+    schedule_en: "4 times daily after meals"
+  },
+  {
+    name_ar: "بريباريشن إتش",
+    name_en: "Preparation H",
+    use_ar: "مرهم للبواسير (يقلل التورم والألم)",
+    use_en: "Hemorrhoid ointment (Reduces swelling/pain)",
+    warning_ar: "نظف المنطقة جيداً قبل الاستخدام",
+    warning_en: "Clean area well before use",
+    schedule_ar: "صباحاً ومساءً وبعد الحمام",
+    schedule_en: "Morning, evening, and after bm"
+  },
+  {
+    name_ar: "نيو هيلار",
+    name_en: "Neo Healar",
+    use_ar: "مرهم عشبي للبواسير والشرخ الشرجي",
+    use_en: "Herbal ointment for hemorrhoids/fissures",
+    warning_ar: "مكونات طبيعية (يسبب برودة)",
+    warning_en: "Natural ingredients (Causes cooling)",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "جي تي إن (نيتروجليسرين)",
+    name_en: "GTN Ointment",
+    use_ar: "لعلاج الشرخ الشرجي (يرخي العضلة)",
+    use_en: "For anal fissure (Relaxes muscle)",
+    warning_ar: "قد يسبب صداع شديد (استخدم قفاز)",
+    warning_en: "May cause severe headache (Use glove)",
+    schedule_ar: "مرتين يومياً على حافة الشرج",
+    schedule_en: "Twice daily on anal verge"
+  },
+  {
+    name_ar: "إكستروما",
+    name_en: "Extrauma",
+    use_ar: "للكدمات وتجمعات الدم وسرعة الشفاء",
+    use_en: "For bruises, hematomas, and healing",
+    warning_ar: "لا يوضع على الجرح المفتوح",
+    warning_en: "Not on open wounds",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "أولفين جيل",
+    name_en: "Olfen Gel",
+    use_ar: "مسكن موضعي للروماتيزم والمفاصل",
+    use_en: "Topical analgesic for rheumatism/joints",
+    warning_ar: "تجنب التعرض للشمس مكان الدهان",
+    warning_en: "Avoid sun on applied area",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "رومافين",
+    name_en: "Rumafen",
+    use_ar: "جيل مسكن ومضاد للالتهاب",
+    use_en: "Analgesic and anti-inflammatory gel",
+    warning_ar: "للاستخدام الظاهري فقط",
+    warning_en: "External use only",
+    schedule_ar: "3 مرات يومياً",
+    schedule_en: "3 times daily"
+  },
+  {
+    name_ar: "بيوفريز",
+    name_en: "Biofreeze",
+    use_ar: "مسكن للألم بالتبريد (المنثول)",
+    use_en: "Pain relief by cooling (Menthol)",
+    warning_ar: "تجنب ملامسة العين والأغشية المخاطية",
+    warning_en: "Avoid eyes and mucous membranes",
+    schedule_ar: "عند اللزوم (بحد أقصى 4 مرات)",
+    schedule_en: "As needed (Max 4 times)"
+  },
+  {
+    name_ar: "برلا كريم",
+    name_en: "Prila Cream",
+    use_ar: "مخدر موضعي (ليدوكائين) قبل الليزر أو الإبر",
+    use_en: "Local anesthetic before laser/needles",
+    warning_ar: "يوضع قبل الإجراء بـ 30-60 دقيقة",
+    warning_en: "Apply 30-60 mins before procedure",
+    schedule_ar: "مرة واحدة قبل الإجراء",
+    schedule_en: "Once before procedure"
+  },
+  {
+    name_ar: "إملا",
+    name_en: "Emla",
+    use_ar: "مخدر موضعي قوي للجلد",
+    use_en: "Strong topical skin anesthetic",
+    warning_ar: "يغطى بضمادة بلاستيكية لزيادة المفعول",
+    warning_en: "Cover with plastic wrap for effect",
+    schedule_ar: "قبل الإجراء بساعة",
+    schedule_en: "1 hour before procedure"
+  },
+  {
+    name_ar: "سبكترا جيل",
+    name_en: "Spectra Gel",
+    use_ar: "سيليكون لعلاج الندبات وآثار العمليات",
+    use_en: "Silicone for scars and surgery marks",
+    warning_ar: "يوضع على الجرح بعد التئامه تماماً",
+    warning_en: "Apply after wound fully closes",
+    schedule_ar: "مرتين يومياً (طبقة رقيقة جداً)",
+    schedule_en: "Twice daily (Very thin layer)"
+  },
+  {
+    name_ar: "كيلو كوت",
+    name_en: "Kelo-Cote",
+    use_ar: "جيل سيليكون متطور للندبات البارزة",
+    use_en: "Advanced silicone gel for keloids",
+    warning_ar: "يحتاج 3 أشهر لنتائج واضحة",
+    warning_en: "Needs 3 months for results",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "جينو دكتارين",
+    name_en: "Gyno-Daktarin",
+    use_ar: "كريم مهبلي للفطريات والالتهابات",
+    use_en: "Vaginal cream for fungus/infection",
+    warning_ar: "يستخدم مع الأداة المرفقة (أبليكيتور)",
+    warning_en: "Use with provided applicator",
+    schedule_ar: "مرة واحدة مساءً لمدة 7 أيام",
+    schedule_en: "Once nightly for 7 days"
+  },
+  {
+    name_ar: "دالاسين (كريم مهبلي)",
+    name_en: "Dalacin Vaginal",
+    use_ar: "مضاد حيوي للالتهابات المهبلية البكتيرية",
+    use_en: "Antibiotic for bacterial vaginosis",
+    warning_ar: "قد يضعف فعالية الواقي الذكري",
+    warning_en: "May weaken condoms",
+    schedule_ar: "مرة واحدة عند النوم (3-7 أيام)",
+    schedule_en: "Once at bedtime (3-7 days)"
+  },
+  {
+    name_ar: "الدارا",
+    name_en: "Aldara",
+    use_ar: "علاج الثآليل التناسلية والجلدية",
+    use_en: "Treats genital and skin warts",
+    warning_ar: "يغسل بعد 8 ساعات من وضعه",
+    warning_en: "Wash off 8 hours after application",
+    schedule_ar: "3 مرات أسبوعياً (يوم بعد يوم)",
+    schedule_en: "3 times weekly (Every other day)"
+  },
+  {
+    name_ar: "ديوفيلم",
+    name_en: "Duofilm",
+    use_ar: "محلول لإزالة السنط (عين السمكة) والثآليل",
+    use_en: "Solution for warts and corns",
+    warning_ar: "حارق للجلد السليم (يوضع بدقة)",
+    warning_en: "Burns healthy skin (Apply precisely)",
+    schedule_ar: "مرة واحدة يومياً بعد نقع المكان بماء دافئ",
+    schedule_en: "Once daily after soaking in warm water"
+  },
+  {
+    name_ar: "كول وماك",
+    name_en: "Collomak",
+    use_ar: "محلول مقشر للجلد الميت والسنط",
+    use_en: "Peeling solution for callus/warts",
+    warning_ar: "احمِ الجلد السليم بالفازلين حول المنطقة",
+    warning_en: "Protect healthy skin with Vaseline",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "يوراكس",
+    name_en: "Eurax",
+    use_ar: "كريم لعلاج الحكة والجرب",
+    use_en: "Cream for itching and scabies",
+    warning_ar: "دهان للجسم كله في حالات الجرب",
+    warning_en: "Full body application for scabies",
+    schedule_ar: "مرة يومياً (لمدة 3-5 أيام للجرب)",
+    schedule_en: "Once daily (3-5 days for scabies)"
+  },
+  {
+    name_ar: "بيرمثرين (نكس)",
+    name_en: "Permethrin (Nix)",
+    use_ar: "علاج القمل والجرب (فعال جداً)",
+    use_en: "Treats lice and scabies (Very effective)",
+    warning_ar: "يترك على الجسم 8-12 ساعة ثم يغسل",
+    warning_en: "Leave on body 8-12 hrs then wash",
+    schedule_ar: "مرة واحدة (تكرر بعد أسبوع عند اللزوم)",
+    schedule_en: "Once (Repeat after week if needed)"
+  },
+  {
+    name_ar: "مينوكسيديل (جيل/فوم)",
+    name_en: "Minoxidil Gel/Foam",
+    use_ar: "لإنبات الشعر وعلاج الصلع الوراثي",
+    use_en: "Hair regrowth for pattern baldness",
+    warning_ar: "يسبب تساقط مؤقت في بداية الاستخدام",
+    warning_en: "Causes temporary shedding at start",
+    schedule_ar: "مرتين يومياً (تدليك فروة الرأس)",
+    schedule_en: "Twice daily (Scalp massage)"
+  },
+  {
+    name_ar: "باندرمال",
+    name_en: "Pandermal",
+    use_ar: "كريم شامل (فطريات، بكتيريا، حساسية)",
+    use_en: "All-in-one (Fungal, Bacterial, Allergy)",
+    warning_ar: "لا يستخدم للأطفال بكثرة",
+    warning_en: "Not much for kids",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "كوادربدرم",
+    name_en: "Quadriderm",
+    use_ar: "علاج الالتهابات الجلدية المعقدة",
+    use_en: "Treats complex skin infections",
+    warning_ar: "يحتوي على كورتيزون قوي",
+    warning_en: "Contains potent steroid",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "تيراميسين (جلد)",
+    name_en: "Terramycin Skin",
+    use_ar: "مرهم مضاد حيوي للجروح البسيطة",
+    use_en: "Antibiotic ointment for minor wounds",
+    warning_ar: "يصبغ الملابس باللون الأصفر",
+    warning_en: "Stains clothes yellow",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "فلامازين",
+    name_en: "Flamazine",
+    use_ar: "كريم سلفا الفضة للحروق (وقاية وعلاج)",
+    use_en: "Silver sulphadiazine for burns",
+    warning_ar: "يحفظ في مكان بارد",
+    warning_en: "Keep in cool place",
+    schedule_ar: "مرة واحدة يومياً (طبقة سميكة)",
+    schedule_en: "Once daily (Thick layer)"
+  },
+  {
+    name_ar: "سولكوسيريل (جيل عين)",
+    name_en: "Solcoseryl Eye Gel",
+    use_ar: "لجروح القرنية وقرح العين",
+    use_en: "For corneal wounds and eye ulcers",
+    warning_ar: "يسبب غشاوة مؤقتة في الرؤية",
+    warning_en: "Causes temporary blurry vision",
+    schedule_ar: "3-4 مرات يومياً",
+    schedule_en: "3-4 times daily"
+  },
+  {
+    name_ar: "كورنيريجل",
+    name_en: "Corneregel",
+    use_ar: "ترطيب وعلاج إصابات سطح العين",
+    use_en: "Hydration and treating eye surface injury",
+    warning_ar: "انزع العدسات اللاصقة قبل وضعه",
+    warning_en: "Remove contacts before use",
+    schedule_ar: "4 مرات يومياً",
+    schedule_en: "4 times daily"
+  },
+  {
+    name_ar: "ريباريل (أقراص/جيل)",
+    name_en: "Reparil N",
+    use_ar: "مضاد للتورم والالتهابات",
+    use_en: "Anti-swelling and anti-inflammatory",
+    warning_ar: "لا يوضع على الجروح المفتوحة",
+    warning_en: "Not on open wounds",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "هيرودويد",
+    name_en: "Hirudoid",
+    use_ar: "علاج الكدمات والتهاب الأوردة (الدوالي)",
+    use_en: "Treats bruises and phlebitis (Varicose)",
+    warning_ar: "تدليك قوي لتسريع الامتصاص",
+    warning_en: "Strong massage for absorption",
+    schedule_ar: "2-3 مرات يومياً",
+    schedule_en: "2-3 times daily"
+  },
+  {
+    name_ar: "فازلين طبي",
+    name_en: "Vaseline Pure",
+    use_ar: "مرطب عام وعازل للجروح السطحية",
+    use_en: "General moisturizer and barrier for wounds",
+    warning_ar: "تأكد من أنه نقي (بيور)",
+    warning_en: "Ensure it is pure",
+    schedule_ar: "عند اللزوم",
+    schedule_en: "As needed"
+  },
+  {
+    name_ar: "مرهم ساليسيليك",
+    name_en: "Salicylic Acid Oint.",
+    use_ar: "لإزالة القشور السميكة (الصدفية/الكالو)",
+    use_en: "Removes thick scales (Psoriasis/Callus)",
+    warning_ar: "قد يسبب تهيج الجلد السليم",
+    warning_en: "May irritate healthy skin",
+    schedule_ar: "مرة واحدة يومياً",
+    schedule_en: "Once daily"
+  },
+  {
+    name_ar: "تراي لـوما",
+    name_en: "Tri-Luma",
+    use_ar: "كريم ثلاثي لتفتيح الكلف الشديد",
+    use_en: "Triple cream for severe melasma",
+    warning_ar: "يستخدم ليلاً فقط وممنوع للحامل",
+    warning_en: "Night only, forbidden in pregnancy",
+    schedule_ar: "مرة واحدة مساءً (لمدة 8 أسابيع)",
+    schedule_en: "Once nightly (For 8 weeks)"
+  },
+  {
+    name_ar: "هاي كوين",
+    name_en: "Hi-Quin",
+    use_ar: "كريم تفتيح للبقع الداكنة (هيدروكينون)",
+    use_en: "Lightening cream for dark spots",
+    warning_ar: "استخدم واقي شمس نهاراً بانتظام",
+    warning_en: "Use sunscreen daily regularly",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  },
+  {
+    name_ar: "أزيليك (سكينورين)",
+    name_en: "Azelaic Acid",
+    use_ar: "تفتيح وعلاج حب الشباب (آمن نسبياً)",
+    use_en: "Whitening and acne treatment (Relatively safe)",
+    warning_ar: "قد يسبب وخز بسيط",
+    warning_en: "May cause mild stinging",
+    schedule_ar: "مرتين يومياً",
+    schedule_en: "Twice daily"
+  }, 
+{
+  name_ar: "أوزلوفين",
+  name_en: "Ozlufin",
+  use_ar: "مسكن موضعي للعضلات",
+  use_en: "Topical muscle pain relief",
+  warning_ar: "لا يوضع على جروح مفتوحة",
+  warning_en: "Do not apply on open wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "موبيل كريم",
+  name_en: "Mobil Cream",
+  use_ar: "ترطيب الجلد الجاف",
+  use_en: "Moisturizes dry skin",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أكتيف جل",
+  name_en: "Active Gel",
+  use_ar: "تخفيف الألم والالتهابات",
+  use_en: "Pain and inflammation relief",
+  warning_ar: "تجنب ملامسة العين",
+  warning_en: "Avoid eye contact",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "سولفي كريم",
+  name_en: "Sulfi Cream",
+  use_ar: "علاج طفح جلدي وفطريات",
+  use_en: "Skin rash and fungal treatment",
+  warning_ar: "لا يستخدم لفترات طويلة",
+  warning_en: "Do not use long term",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "إيفين كريم",
+  name_en: "Even Cream",
+  use_ar: "تفتيح البشرة وتوحيد اللون",
+  use_en: "Skin lightening",
+  warning_ar: "تجنب التعرض للشمس",
+  warning_en: "Avoid sunlight",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أكوا جل",
+  name_en: "Aqua Gel",
+  use_ar: "تهدئة وترطيب البشرة الحساسة",
+  use_en: "Soothes and moisturizes sensitive skin",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "سيرين كريم",
+  name_en: "Serene Cream",
+  use_ar: "تهدئة الاحمرار وتهيج الجلد",
+  use_en: "Reduces redness and irritation",
+  warning_ar: "يوضع بطبقة رقيقة",
+  warning_en: "Apply thin layer",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "هيبو كريم",
+  name_en: "Hypo Cream",
+  use_ar: "للحساسية الجلدية والأكزيما",
+  use_en: "Allergic dermatitis and eczema",
+  warning_ar: "للاستخدام الموضعي فقط",
+  warning_en: "Topical use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "ريليف جل",
+  name_en: "Relief Gel",
+  use_ar: "تخفيف الحكة والألم الموضعية",
+  use_en: "Relieves itching and local pain",
+  warning_ar: "لا يوضع على الجلد المجروح",
+  warning_en: "Do not apply on broken skin",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "ألو سيرين",
+  name_en: "Alo Serene",
+  use_ar: "ترطيب وتهدئة الجلد الملتهب",
+  use_en: "Moisturizes inflamed skin",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "ميجو كريم",
+  name_en: "Mego Cream",
+  use_ar: "علاج طفح جلدي وحساسية خفيفة",
+  use_en: "Mild rash and allergy treatment",
+  warning_ar: "تجنب الجروح المفتوحة",
+  warning_en: "Avoid open wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أكتيف بلس",
+  name_en: "Active Plus",
+  use_ar: "تخفيف الألم العضلي والالتهابات",
+  use_en: "Muscle pain and inflammation",
+  warning_ar: "لا يوضع على الجلد التالف",
+  warning_en: "Do not apply on damaged skin",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "نيترا جل",
+  name_en: "Nitra Gel",
+  use_ar: "علاج حروق الشمس الطفيفة",
+  use_en: "Minor sunburn treatment",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "عند الحاجة",
+  schedule_en: "As needed"
+},
+{
+  name_ar: "كومفورت كريم",
+  name_en: "Comfort Cream",
+  use_ar: "ترطيب الجلد المتشقق",
+  use_en: "Moisturizes cracked skin",
+  warning_ar: "يمكن استخدامه يومياً",
+  warning_en: "Safe for daily use",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أوليف كريم",
+  name_en: "Olive Cream",
+  use_ar: "ترطيب وتهدئة الجلد الجاف",
+  use_en: "Moisturizes dry skin",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "جلان كريم",
+  name_en: "Glan Cream",
+  use_ar: "تهدئة التهابات الجلد الخفيفة",
+  use_en: "Mild skin inflammation",
+  warning_ar: "يوضع بطبقة رقيقة",
+  warning_en: "Apply thin layer",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أكوا فريش",
+  name_en: "Aqua Fresh",
+  use_ar: "ترطيب وتهدئة البشرة الملتهبة",
+  use_en: "Moisturizes inflamed skin",
+  warning_ar: "للاستخدام الموضعي فقط",
+  warning_en: "Topical use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "رين كريم",
+  name_en: "Rain Cream",
+  use_ar: "علاج طفح جلدي وحساسية الجلد",
+  use_en: "Rash and skin allergy treatment",
+  warning_ar: "لا يوضع على الجروح المفتوحة",
+  warning_en: "Do not apply on open wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "سوفت جل",
+  name_en: "Soft Gel",
+  use_ar: "ترطيب وتهدئة الجلد الجاف والحساس",
+  use_en: "Moisturizes sensitive dry skin",
+  warning_ar: "آمن للاستخدام اليومي",
+  warning_en: "Safe for daily use",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "إينجل كريم",
+  name_en: "Angel Cream",
+  use_ar: "تهدئة تهيج الجلد وحساسية طفيفة",
+  use_en: "Soothes mild skin irritation",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+}, 
+{
+  name_ar: "ريتينوين كريم",
+  name_en: "Tretinoin",
+  use_ar: "علاج حب الشباب وتجديد الجلد",
+  use_en: "Acne and skin renewal",
+  warning_ar: "تجنب الشمس",
+  warning_en: "Avoid sunlight",
+  schedule_ar: "مرة مساءً",
+  schedule_en: "Once at night"
+},
+{
+  name_ar: "أدابالين",
+  name_en: "Adapalene",
+  use_ar: "علاج حب الشباب",
+  use_en: "Acne treatment",
+  warning_ar: "قد يسبب احمرار مؤقت",
+  warning_en: "May cause temporary redness",
+  schedule_ar: "مرة مساءً",
+  schedule_en: "Once nightly"
+},
+{
+  name_ar: "بنزويل بيروكسيد",
+  name_en: "Benzoyl Peroxide",
+  use_ar: "قتل بكتيريا حب الشباب",
+  use_en: "Kills acne bacteria",
+  warning_ar: "قد يبهت الملابس",
+  warning_en: "May bleach fabrics",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "أزيليك أسيد",
+  name_en: "Azelaic Acid",
+  use_ar: "حب الشباب والتصبغات",
+  use_en: "Acne and pigmentation",
+  warning_ar: "يستخدم بطبقة رقيقة",
+  warning_en: "Apply thin layer",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "ميترونيدازول جل",
+  name_en: "Metronidazole Gel",
+  use_ar: "الوردية والتهابات الجلد",
+  use_en: "Rosacea and skin inflammation",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "سلفاسيتاميد",
+  name_en: "Sulfacetamide",
+  use_ar: "حب الشباب والتهابات الجلد",
+  use_en: "Acne and skin infection",
+  warning_ar: "يوقف عند التهيج",
+  warning_en: "Stop if irritation occurs",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "إريثروميسين جل",
+  name_en: "Erythromycin Gel",
+  use_ar: "مضاد حيوي موضعي لحب الشباب",
+  use_en: "Topical antibiotic for acne",
+  warning_ar: "لا يطيل الاستخدام",
+  warning_en: "Do not use long term",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "كليندامايسين جل",
+  name_en: "Clindamycin Gel",
+  use_ar: "حب الشباب",
+  use_en: "Acne treatment",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "هيدروكينون",
+  name_en: "Hydroquinone",
+  use_ar: "تفتيح البقع الداكنة",
+  use_en: "Skin lightening",
+  warning_ar: "لا يستخدم لفترات طويلة",
+  warning_en: "Do not use long term",
+  schedule_ar: "مرة مساءً",
+  schedule_en: "Once nightly"
+},
+{
+  name_ar: "كولاجين كريم",
+  name_en: "Collagen Cream",
+  use_ar: "ترطيب وتجديد البشرة",
+  use_en: "Skin moisturizing",
+  warning_ar: "تجنب ملامسة العين",
+  warning_en: "Avoid eye contact",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "بانثينول",
+  name_en: "Panthenol",
+  use_ar: "ترطيب وتهدئة الجلد",
+  use_en: "Skin soothing",
+  warning_ar: "آمن موضعياً",
+  warning_en: "Generally safe",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "لانولين",
+  name_en: "Lanolin",
+  use_ar: "تشقق الحلمات والشفاه",
+  use_en: "Cracked skin treatment",
+  warning_ar: "للاستخدام الخارجي",
+  warning_en: "External use",
+  schedule_ar: "عند الحاجة",
+  schedule_en: "As needed"
+},
+{
+  name_ar: "ألوفيرا جل",
+  name_en: "Aloe Vera Gel",
+  use_ar: "حروق الشمس وتهيج الجلد",
+  use_en: "Sunburn and irritation",
+  warning_ar: "يستخدم على جلد نظيف",
+  warning_en: "Use on clean skin",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "كالامين لوشن",
+  name_en: "Calamine Lotion",
+  use_ar: "الحكة والطفح الجلدي",
+  use_en: "Itching and rash",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "عند الحاجة",
+  schedule_en: "As needed"
+},
+{
+  name_ar: "كابسايسين",
+  name_en: "Capsaicin Cream",
+  use_ar: "آلام الأعصاب موضعياً",
+  use_en: "Neuropathic pain",
+  warning_ar: "قد يسبب إحساس حارق",
+  warning_en: "May cause burning sensation",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "مينوكسيديل",
+  name_en: "Minoxidil",
+  use_ar: "علاج تساقط الشعر",
+  use_en: "Hair loss treatment",
+  warning_ar: "يستخدم على فروة الرأس فقط",
+  warning_en: "Scalp use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "ديكسبانثينول",
+  name_en: "Dexpanthenol",
+  use_ar: "التئام الجروح البسيطة",
+  use_en: "Wound healing",
+  warning_ar: "لا يوضع على جروح ملوثة",
+  warning_en: "Avoid infected wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "إكتيول مرهم",
+  name_en: "Ichthammol",
+  use_ar: "الدمامل والتهابات الجلد",
+  use_en: "Boils and skin infections",
+  warning_ar: "له رائحة قوية",
+  warning_en: "Strong odor",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "نترات الفضة",
+  name_en: "Silver Nitrate",
+  use_ar: "إزالة الثآليل موضعياً",
+  use_en: "Wart removal",
+  warning_ar: "قد يسبب حروق",
+  warning_en: "May cause burns",
+  schedule_ar: "حسب الطبيب",
+  schedule_en: "As prescribed"
+},
+{
+  name_ar: "بولي سبورين",
+  name_en: "Polysporin",
+  use_ar: "مضاد حيوي موضعي للجروح",
+  use_en: "Topical antibiotic",
+  warning_ar: "لا يستخدم طويلاً",
+  warning_en: "Short-term use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+}, 
+{
+  name_ar: "ميوبيروسين",
+  name_en: "Mupirocin",
+  use_ar: "علاج التهابات الجلد البكتيرية",
+  use_en: "Bacterial skin infections",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "3 مرات يومياً",
+  schedule_en: "3 times daily"
+},
+{
+  name_ar: "باستراسين",
+  name_en: "Bacitracin",
+  use_ar: "مضاد حيوي موضعي للجروح",
+  use_en: "Topical antibiotic for wounds",
+  warning_ar: "لا يستخدم لفترات طويلة",
+  warning_en: "Do not use long term",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "كلوتريمازول",
+  name_en: "Clotrimazole",
+  use_ar: "علاج فطريات الجلد",
+  use_en: "Skin fungal infections",
+  warning_ar: "يستمر حتى بعد اختفاء الأعراض",
+  warning_en: "Continue after symptoms disappear",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "كيتوكونازول",
+  name_en: "Ketoconazole",
+  use_ar: "فطريات الجلد وقشرة الرأس",
+  use_en: "Fungal infections and dandruff",
+  warning_ar: "تجنب ملامسة العين",
+  warning_en: "Avoid eye contact",
+  schedule_ar: "مرة أو مرتين يومياً",
+  schedule_en: "Once or twice daily"
+},
+{
+  name_ar: "تيربينافين",
+  name_en: "Terbinafine",
+  use_ar: "علاج التينيا وفطريات القدم",
+  use_en: "Athlete’s foot and ringworm",
+  warning_ar: "اغسل يديك بعد الاستعمال",
+  warning_en: "Wash hands after use",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "نيستاتين",
+  name_en: "Nystatin",
+  use_ar: "فطريات الجلد والكانديدا",
+  use_en: "Candida skin infections",
+  warning_ar: "للاستخدام الموضعي فقط",
+  warning_en: "Topical use only",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "هيدروكورتيزون",
+  name_en: "Hydrocortisone",
+  use_ar: "التهابات الجلد والحساسية",
+  use_en: "Skin inflammation and allergy",
+  warning_ar: "لا يستخدم لفترة طويلة",
+  warning_en: "Do not use long term",
+  schedule_ar: "مرة أو مرتين يومياً",
+  schedule_en: "Once or twice daily"
+},
+{
+  name_ar: "بيتاميثازون",
+  name_en: "Betamethasone",
+  use_ar: "التهابات جلد شديدة",
+  use_en: "Severe skin inflammation",
+  warning_ar: "لا يستخدم على الوجه طويلاً",
+  warning_en: "Avoid long use on face",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "موميتازون",
+  name_en: "Mometasone",
+  use_ar: "الأكزيما والحساسية",
+  use_en: "Eczema and allergy",
+  warning_ar: "يستخدم بطبقة رقيقة",
+  warning_en: "Apply thin layer",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "تاكروليمس",
+  name_en: "Tacrolimus",
+  use_ar: "الأكزيما الشديدة",
+  use_en: "Severe eczema",
+  warning_ar: "تجنب الشمس",
+  warning_en: "Avoid sunlight",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "بيميكروليمس",
+  name_en: "Pimecrolimus",
+  use_ar: "التهاب الجلد التحسسي",
+  use_en: "Atopic dermatitis",
+  warning_ar: "لا يوضع على جروح مفتوحة",
+  warning_en: "Do not apply on open wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "كالسبيوتريول",
+  name_en: "Calcipotriol",
+  use_ar: "علاج الصدفية",
+  use_en: "Psoriasis treatment",
+  warning_ar: "لا يفرط في الكمية",
+  warning_en: "Do not overuse",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "حمض الساليسيليك",
+  name_en: "Salicylic Acid",
+  use_ar: "إزالة الجلد الميت والثآليل",
+  use_en: "Removes dead skin and warts",
+  warning_ar: "لا يستخدم على الجلد السليم",
+  warning_en: "Avoid healthy skin",
+  schedule_ar: "مرة يومياً",
+  schedule_en: "Once daily"
+},
+{
+  name_ar: "يوريا كريم",
+  name_en: "Urea Cream",
+  use_ar: "ترطيب الجلد الجاف والمتشقق",
+  use_en: "Moisturizer for dry skin",
+  warning_ar: "تجنب الجروح المفتوحة",
+  warning_en: "Avoid open wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+},
+{
+  name_ar: "أكسيد الزنك",
+  name_en: "Zinc Oxide",
+  use_ar: "التسلخات والتهابات الحفاض",
+  use_en: "Diaper rash and irritation",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "عند الحاجة",
+  schedule_en: "As needed"
+},
+{
+  name_ar: "سلفاديازين الفضة",
+  name_en: "Silver Sulfadiazine",
+  use_ar: "علاج الحروق والجروح",
+  use_en: "Burns and wounds",
+  warning_ar: "لا يستخدم لحديثي الولادة",
+  warning_en: "Not for newborns",
+  schedule_ar: "مرة أو مرتين يومياً",
+  schedule_en: "Once or twice daily"
+},
+{
+  name_ar: "أسيكلوفير كريم",
+  name_en: "Acyclovir Cream",
+  use_ar: "علاج الهربس الجلدي",
+  use_en: "Herpes skin infections",
+  warning_ar: "يستخدم مبكراً عند ظهور الأعراض",
+  warning_en: "Use early in symptoms",
+  schedule_ar: "5 مرات يومياً",
+  schedule_en: "5 times daily"
+},
+{
+  name_ar: "دوكوسانول",
+  name_en: "Docosanol",
+  use_ar: "علاج قرح الشفاه الفيروسية",
+  use_en: "Cold sores treatment",
+  warning_ar: "للاستخدام الخارجي فقط",
+  warning_en: "External use only",
+  schedule_ar: "5 مرات يومياً",
+  schedule_en: "5 times daily"
+},
+{
+  name_ar: "ليدوكايين مرهم",
+  name_en: "Lidocaine Ointment",
+  use_ar: "تخدير موضعي للألم",
+  use_en: "Local pain relief",
+  warning_ar: "لا يستخدم على جروح كبيرة",
+  warning_en: "Do not apply on large wounds",
+  schedule_ar: "عند الحاجة",
+  schedule_en: "As needed"
+},
+{
+  name_ar: "هيبارينويد",
+  name_en: "Heparinoid",
+  use_ar: "الكدمات والتجمعات الدموية",
+  use_en: "Bruises and hematomas",
+  warning_ar: "لا يوضع على جروح مفتوحة",
+  warning_en: "Do not apply on open wounds",
+  schedule_ar: "مرتين يومياً",
+  schedule_en: "Twice daily"
+}
+]; // نهاية القائمة
+    // ==========================================
+    // 2. مصفوفة الـ 50 نصيحة طبية
+    // ==========================================
+    const medicalTips = {
+        ar: [
+            "💡 أكمل جرعة المضاد الحيوي كاملة حتى لو شعرت بالتحسن.",
+            "💡 لا تتناول الدواء مع العصير؛ الماء هو الأفضل للامتصاص.",
+            "💡 احفظ الأدوية بعيداً عن رطوبة الحمام وحرارة المطبخ.",
+            "💡 المسكنات يفضل تناولها بعد الطعام لحماية المعدة.",
+            "💡 لا تضاعف الجرعة إذا نسيت موعدها، استشر الصيدلي.",
+            "💡 تأكد من تاريخ الصلاحية قبل كل استخدام.",
+            "💡 لا تطحن الأقراص المغلفة إلا إذا أخبرك الطبيب بذلك.",
+            "💡 فيتامين C يزيد من امتصاص الحديد في الجسم.",
+            "💡 تجنب شرب الحليب مع بعض المضادات الحيوية.",
+            "💡 ممارسة الرياضة نصف ساعة يومياً تعزز مفعول الأدوية.",
+            "💡 شرب الكثير من الماء يساعد الكلى على التخلص من السموم.",
+            "💡 قطرات العين يجب التخلص منها بعد شهر من فتحها.",
+            "💡 لا تستخدم أدوية الآخرين حتى لو تشابهت الأعراض.",
+            "💡 أخبر طبيبك عن أي مكملات غذائية تتناولها.",
+            "💡 غسل اليدين هو الخطوة الأولى للوقاية من العدوى.",
+            "💡 القهوة قد تزيد من سرعة ضربات القلب مع بعض أدوية البرد.",
+            "💡 أدوية الغدة الدرقية تؤخذ عادة على معدة فارغة تماماً.",
+            "💡 تجنب الملح الزائد إذا كنت تعاني من ضغط الدم المرتفع.",
+            "💡 لا تتوقف عن أدوية الضغط فجأة دون استشارة.",
+            "💡 العسل مفيد للسعال للأطفال فوق سن السنة الواحدة.",
+            "💡 النوم الكافي (7-8 ساعات) يقوي جهازك المناعي.",
+            "💡 الحديد قد يسبب تغير لون البراز للأسود، وهذا طبيعي.",
+            "💡 استنشق بخار الماء لترطيب المجاري التنفسية عند الزكام.",
+            "💡 أدوية الكوليسترول يفضل أخذها ليلاً في الغالب.",
+            "💡 لا تستخدم الكريمات المحتوية على الكورتيزون للوجه دون إشراف.",
+            "💡 تقليل السكريات يقلل من فرص الالتهابات في الجسم.",
+            "💡 تناول الألياف يحسن الهضم ويقلل الإمساك.",
+            "💡 الصداع المتكرر قد يكون سببه نقص شرب الماء.",
+            "💡 لا تترك الأدوية في السيارة خلال فصل الصيف.",
+            "💡 القطرات الأنفية المزيلة للاحتقان لا تستخدم أكثر من 3 أيام.",
+            "💡 المسكنات كالإيبوبروفين قد ترفع ضغط الدم لدى البعض.",
+            "💡 حافظ على وزن مثالي لتقليل الضغط على المفاصل.",
+            "💡 فحص السكر الدوري ضروري لمرضى السكري.",
+            "💡 الخضروات الورقية غنية بالفيتامينات والمعادن الهامة.",
+            "💡 استشر الصيدلي عن التداخلات الدوائية.",
+            "💡 ضع الأدوية في مكان مرتفع بعيداً عن متناول الأطفال.",
+            "💡 لا تتناول الكحول مع الأدوية نهائياً.",
+            "💡 التعرض للشمس (15 دقيقة) يمدك بفيتامين د.",
+            "💡 تجنب الأطعمة الدسمة قبل النوم لتقليل الحموضة.",
+            "💡 التدخين يقلل من سرعة شفاء الجروح والجسم.",
+            "💡 استخدم واقي الشمس لحماية جلدك من الحروق.",
+            "💡 اليانسون والنعناع يساعدان في تهدئة القولون.",
+            "💡 لا تفرك عينيك بعد وضع القطرة مباشرة.",
+            "💡 أدوية الحساسية قد تسبب النعاس، احذر عند القيادة.",
+            "💡 الزنك يساعد في سرعة التئام الجروح.",
+            "💡 تجنب شرب الشاي مباشرة بعد وجبة الغداء.",
+            "💡 فحص الضغط يجب أن يكون وأنت في حالة استرخاء.",
+            "💡 اتبع نظاماً غذائياً متوازناً للوقاية من الأنيميا.",
+            "💡 غسل الفواكه والخضروات جيداً يمنع الطفيليات.",
+            "💡 الابتسامة والحالة النفسية الجيدة تسرع الشفاء!"
+        ],
+        en: [
+            "💡 Complete your antibiotic course even if you feel better.",
+            "💡 Take medicine with water, not juice, for better absorption.",
+            "💡 Store meds away from bathroom moisture and kitchen heat.",
+            "💡 Take painkillers after food to protect your stomach.",
+            "💡 Don't double the dose if you miss one; ask your pharmacist.",
+            "💡 Always check the expiration date before use.",
+            "💡 Do not crush coated tablets unless instructed by a doctor.",
+            "💡 Vitamin C increases iron absorption in the body.",
+            "💡 Avoid milk with some types of antibiotics.",
+            "💡 30 mins of exercise daily boosts medicine effectiveness.",
+            "💡 Drinking water helps kidneys flush out toxins.",
+            "💡 Eye drops should be discarded one month after opening.",
+            "💡 Never share prescription meds with others.",
+            "💡 Tell your doctor about any supplements you take.",
+            "💡 Hand washing is the first step in infection prevention.",
+            "💡 Coffee may increase heart rate with cold medicines.",
+            "💡 Thyroid medications are usually taken on an empty stomach.",
+            "💡 Avoid excess salt if you have high blood pressure.",
+            "💡 Don't stop blood pressure meds suddenly.",
+            "💡 Honey is good for coughs in children over 1 year old.",
+            "💡 7-8 hours of sleep strengthens your immune system.",
+            "💡 Iron supplements may turn stool black; this is normal.",
+            "💡 Inhale steam to moisturize airways during a cold.",
+            "💡 Cholesterol meds are often best taken at night.",
+            "💡 Don't use steroid creams on the face without supervision.",
+            "💡 Reducing sugar intake lowers body inflammation.",
+            "💡 Fiber improves digestion and reduces constipation.",
+            "💡 Frequent headaches can be caused by dehydration.",
+            "💡 Don't leave medicines in the car during summer.",
+            "💡 Nasal decongestant sprays shouldn't be used for >3 days.",
+            "💡 Painkillers like Ibuprofen may raise blood pressure.",
+            "💡 Maintain a healthy weight to reduce joint pressure.",
+            "💡 Regular glucose checks are vital for diabetics.",
+            "💡 Leafy greens are rich in essential vitamins.",
+            "💡 Ask your pharmacist about drug interactions.",
+            "💡 Keep meds in a high place out of children's reach.",
+            "💡 Never consume alcohol with medications.",
+            "💡 15 mins of sun exposure provides Vitamin D.",
+            "💡 Avoid fatty foods before bed to reduce acidity.",
+            "💡 Smoking slows down the body's healing process.",
+            "💡 Use sunscreen to protect your skin from burns.",
+            "💡 Anise and mint help soothe the colon.",
+            "💡 Don't rub your eyes immediately after using drops.",
+            "💡 Allergy meds may cause drowsiness; be careful driving.",
+            "💡 Zinc helps in faster wound healing.",
+            "💡 Avoid drinking tea immediately after lunch.",
+            "💡 Measure blood pressure while in a relaxed state.",
+            "💡 Eat a balanced diet to prevent anemia.",
+            "💡 Wash fruits and vegetables well to prevent parasites.",
+            "💡 A positive mood and smiling speed up recovery!"
+        ]
+    };
+
+    // ==========================================
+    // 3. المنطق البرمجي (JS Logic)
+    // ==========================================
+    function displayRandomTip() {
+        const lang = document.getElementById("languageSelect").value;
+        const tips = medicalTips[lang];
+        const randomIndex = Math.floor(Math.random() * tips.length);
+        document.getElementById("tipText").innerText = tips[randomIndex];
+    }
+
+    function normalizeText(text) {
+        if (!text) return "";
+        return text.toLowerCase().replace(/أ|إ|آ/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ئ|ؤ/g, "ء").trim();
+    }
+
+    function searchMedicine() {
+        const lang = document.getElementById("languageSelect").value;
+        const query = normalizeText(document.getElementById("searchInput").value);
+        const resultsDiv = document.getElementById("results");
+
+        resultsDiv.innerHTML = "";
+        if (query.length < 1) return;
+
+        const results = medicines.filter(med => 
+            normalizeText(med.name_ar).includes(query) || 
+            normalizeText(med.name_en).includes(query) || 
+            normalizeText(med.use_ar).includes(query)
+        );
+
+        if (results.length === 0) {
+            resultsDiv.innerHTML = lang === "en" ? "<p>❌ No results found</p>" : "<p>❌ لا توجد نتائج مطابقة</p>";
+            return;
+        }
+
+        results.slice(0, 50).forEach(med => {
+            const card = document.createElement("div");
+            card.className = "card";
+            
+            if (lang === "en") {
+                card.innerHTML = `
+                    <h3>💊 ${med.name_en}</h3>
+                    <p class="use-text">✅ Use: ${med.use_en}</p>
+                    <p class="warning-text">⚠️ Warning: ${med.warning_en}</p>
+                    <div class="schedule-text">⏰ Timing: ${med.schedule_en}</div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <h3>💊 ${med.name_ar} - ${med.name_en}</h3>
+                    <p class="use-text">✅ الاستخدام: ${med.use_ar}</p>
+                    <p class="warning-text">⚠️ تحذير: ${med.warning_ar}</p>
+                    <div class="schedule-text">⏰ موعد الاستخدام: ${med.schedule_ar}</div>
+                `;
+            }
+            resultsDiv.appendChild(card);
+        });
+    }
+
+    function changeLanguage() {
+        const lang = document.getElementById("languageSelect").value;
+        const html = document.getElementById("htmlPage");
+        
+        if (lang === "en") {
+            html.dir = "ltr";
+            document.getElementById("mainHeading").innerText = "🩺 Smart Medicine Advisor";
+            document.getElementById("searchInput").placeholder = "Search medicine or symptom...";
+            document.getElementById("clearBtn").innerText = "🗑️ Clear Results";
+            document.getElementById("disclaimer").innerText = "⚠️ Disclaimer: For educational purposes only. Consult your doctor.";
+        } else {
+            html.dir = "rtl";
+            document.getElementById("mainHeading").innerText = "🩺 مستشارك الذكي للأدوية";
+            document.getElementById("searchInput").placeholder = "اكتب اسم الدواء أو العرض...";
+            document.getElementById("clearBtn").innerText = "🗑️ مسح النتائج";
+            document.getElementById("disclaimer").innerText = "⚠️ تنبيه: هذه المعلومات للأغراض التعليمية فقط ولا تغني عن استشارة الطبيب.";
+        }
+        displayRandomTip();
+        clearResults();
+    }
+
+    function clearResults() {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("results").innerHTML = "";
+    }
+
+    window.onload = displayRandomTip;
+</script>
+</body>
+</html>
